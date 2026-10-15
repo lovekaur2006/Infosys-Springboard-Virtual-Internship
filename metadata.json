@@ -1,0 +1,6 @@
+{
+  "name": "NegotiateAI - Scenario Selection & Agent Configuration",
+  "description": "Pre-built negotiation scenarios, AI agent role customization, personality tuning, constraints validation, and Google Calendar session scheduling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
