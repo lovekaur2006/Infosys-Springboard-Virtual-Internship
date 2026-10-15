@@ -140,6 +140,20 @@ export const initAuth = (
 };
 
 /**
+ * Signs in using demo mode for local evaluation without external Google credentials.
+ */
+export const demoSignIn = (): { user: CalendarUser; accessToken: string } => {
+  const demoUser: CalendarUser = {
+    displayName: 'Demo User (Internship Evaluation)',
+    email: 'evaluator@infosys-springboard.org',
+    photoURL: null,
+  };
+  cachedAccessToken = 'demo_token';
+  cachedUser = demoUser;
+  return { user: demoUser, accessToken: 'demo_token' };
+};
+
+/**
  * Signs in with Google Identity Services (Calendar scope) without Firebase Auth domains.
  */
 export const googleSignIn = async (): Promise<{
@@ -150,9 +164,10 @@ export const googleSignIn = async (): Promise<{
     return null;
   }
 
-  const clientId = firebaseConfig.oAuthClientId;
+  const envClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
+  const clientId = (envClientId && envClientId.trim().length > 0) ? envClientId : firebaseConfig.oAuthClientId;
   if (!clientId) {
-    throw new Error('Missing Google OAuth client ID in firebase-applet-config.json');
+    throw new Error('Missing Google OAuth client ID in firebase-applet-config.json or .env.local');
   }
 
   await loadGoogleIdentity();

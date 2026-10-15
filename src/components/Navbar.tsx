@@ -24,6 +24,7 @@ interface NavbarProps {
   onSwitchView: (view: 'config' | 'negotiation') => void;
   onResetDefaults: () => void;
   onOpenCalendarModal: () => void;
+  onDemoSignIn?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -35,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSwitchView,
   onResetDefaults,
   onOpenCalendarModal,
+  onDemoSignIn,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
@@ -105,6 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onSignOut={onSignOut}
             isLoading={isLoadingAuth}
             onOpenCalendarModal={onOpenCalendarModal}
+            onDemoSignIn={onDemoSignIn}
           />
         </div>
       </div>

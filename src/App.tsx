@@ -18,6 +18,7 @@ import { validateConfiguration } from './services/negotiationEngine.ts';
 import {
   initAuth,
   googleSignIn,
+  demoSignIn,
   logout,
   CalendarUser,
 } from './services/authService.ts';
@@ -165,16 +166,24 @@ export default function App() {
         code === 'auth/popup-blocked'
           ? 'Google sign-in popup was blocked. Allow popups for this site and try again.'
           : code === 'auth/popup-closed-by-user'
-          ? 'Google sign-in was cancelled before Calendar access was granted.'
+          ? 'Google sign-in was cancelled.'
           : code === 'auth/access-denied'
-          ? 'Access blocked: The OAuth client is not configured for this origin. Add http://localhost:3000 to Authorized JavaScript Origins in Google Cloud Console > APIs & Services > Credentials.'
+          ? 'Access Blocked: Authorization Error. In Google Cloud Console, add your Gmail under OAuth Consent Screen > Test Users, and add http://localhost:3000 to Authorized JavaScript Origins. Alternatively, click "Demo Mode" below.'
           : code === 'auth/unauthorized-domain'
-          ? 'This domain is not authorized. Add localhost in authorized domains.'
+          ? 'Domain not authorized. Add localhost to Authorized JavaScript Origins.'
           : err?.message || 'Google Sign-In failed.';
       showToast('error', message);
     } finally {
       setIsLoadingAuth(false);
     }
+  };
+
+  // Demo Sign-In Flow for offline testing and evaluation
+  const handleDemoSignIn = () => {
+    const result = demoSignIn();
+    setUser(result.user);
+    setAccessToken(result.accessToken);
+    showToast('success', 'Demo Calendar Mode activated! You can test session scheduling.');
   };
 
   // Google Sign-Out Flow
@@ -303,6 +312,7 @@ export default function App() {
           onSignOut={handleSignOut}
           isLoadingAuth={isLoadingAuth}
           onOpenCalendarEvents={() => setIsEventListModalOpen(true)}
+          onDemoSignIn={handleDemoSignIn}
         />
       </div>
 

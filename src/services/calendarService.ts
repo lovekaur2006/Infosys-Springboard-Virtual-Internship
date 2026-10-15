@@ -35,6 +35,26 @@ export async function createCalendarEvent(
   accessToken: string,
   event: CalendarEventPayload
 ): Promise<GoogleCalendarEvent> {
+  // Support Demo Mode (offline / evaluation mode)
+  if (accessToken === 'demo_token') {
+    const demoEvent: GoogleCalendarEvent = {
+      id: `demo-${Date.now()}`,
+      summary: event.summary,
+      description: event.description,
+      htmlLink: 'https://calendar.google.com',
+      start: { dateTime: event.startDateTime },
+      end: { dateTime: event.endDateTime },
+    };
+    try {
+      const stored = JSON.parse(localStorage.getItem('negotiateai_demo_events') || '[]');
+      stored.unshift(demoEvent);
+      localStorage.setItem('negotiateai_demo_events', JSON.stringify(stored));
+    } catch (e) {
+      console.warn('Could not persist demo event to localStorage', e);
+    }
+    return demoEvent;
+  }
+
   const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
   const body = {
@@ -76,6 +96,15 @@ export async function createCalendarEvent(
  * Lists recent and upcoming negotiation events from the user's primary Google Calendar.
  */
 export async function listCalendarEvents(accessToken: string): Promise<GoogleCalendarEvent[]> {
+  // Support Demo Mode
+  if (accessToken === 'demo_token') {
+    try {
+      return JSON.parse(localStorage.getItem('negotiateai_demo_events') || '[]');
+    } catch {
+      return [];
+    }
+  }
+
   const timeMin = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(
     timeMin

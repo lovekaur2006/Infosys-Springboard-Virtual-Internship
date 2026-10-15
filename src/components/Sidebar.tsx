@@ -28,6 +28,7 @@ interface SidebarProps {
   onSignOut: () => void;
   isLoadingAuth: boolean;
   onOpenCalendarEvents: () => void;
+  onDemoSignIn?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSignOut,
   isLoadingAuth,
   onOpenCalendarEvents,
+  onDemoSignIn,
 }) => {
   const navItems: { id: NavTab; label: string; icon: React.ReactNode }[] = [
     {
@@ -151,14 +153,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              onClick={onSignIn}
-              disabled={isLoadingAuth}
-              className="w-full mt-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
-            >
-              <LogIn className="w-3 h-3 text-blue-400" />
-              {isLoadingAuth ? 'Connecting...' : 'Connect Google Cal'}
-            </button>
+            <div className="flex flex-col gap-1.5 mt-1">
+              <button
+                onClick={onSignIn}
+                disabled={isLoadingAuth}
+                className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <LogIn className="w-3 h-3 text-blue-400" />
+                {isLoadingAuth ? 'Connecting...' : 'Connect Google Cal'}
+              </button>
+              {onDemoSignIn && (
+                <button
+                  onClick={onDemoSignIn}
+                  type="button"
+                  className="w-full py-1 px-2 text-[10px] text-slate-400 hover:text-blue-300 hover:bg-slate-800/60 rounded transition-colors text-center cursor-pointer"
+                  title="Enable offline calendar mode without Google OAuth"
+                >
+                  ⚡ Or enable Demo Mode
+                </button>
+              )}
+            </div>
           )}
         </div>
 
