@@ -39,7 +39,7 @@ export const ReviewStartScreen: React.FC<ReviewStartScreenProps> = ({
   const getScenarioIcon = (id: string) => {
     switch (id) {
       case 'vendor-pricing':
-        return <Building2 className="w-5 h-5 text-blue-600" />;
+        return <Building2 className="w-5 h-5 text-teal-700" />;
       case 'job-offer':
         return <Briefcase className="w-5 h-5 text-purple-600" />;
       case 'budget-allocation':
@@ -49,13 +49,18 @@ export const ReviewStartScreen: React.FC<ReviewStartScreenProps> = ({
   };
 
   const getAgentAvatarBg = (idx: number) => {
-    if (idx === 0) return 'bg-blue-600 text-white';
+    if (idx === 0) return 'bg-teal-700 text-white';
     if (idx === 1) return 'bg-purple-600 text-white';
     return 'bg-emerald-600 text-white';
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="pn-page space-y-6 animate-in fade-in duration-200">
+      <header className="pb-1">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-teal-700">Final check · ready when you are</div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Review the room.</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Confirm the scenario, agent positions, and negotiation boundaries before you begin.</p>
+      </header>
       {/* 3-Section Grid matching Screen 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Section 1: Selected Scenario Card (3.5 cols) */}
@@ -108,7 +113,7 @@ export const ReviewStartScreen: React.FC<ReviewStartScreenProps> = ({
             </div>
             <button
               onClick={onBackToConfig}
-              className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
+              className="text-xs text-teal-700 hover:text-teal-800 font-bold flex items-center gap-1"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Edit Settings
@@ -154,7 +159,7 @@ export const ReviewStartScreen: React.FC<ReviewStartScreenProps> = ({
                     {/* Goal */}
                     <div className="mt-3">
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
-                        <Target className="w-3 h-3 text-blue-600" /> Goal
+                        <Target className="w-3 h-3 text-teal-700" /> Goal
                       </div>
                       <p className="mt-1 text-xs text-slate-700 font-medium leading-relaxed">
                         {agent.primaryGoal}
@@ -235,7 +240,7 @@ export const ReviewStartScreen: React.FC<ReviewStartScreenProps> = ({
               <button
                 type="button"
                 onClick={onStartNegotiation}
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-teal-700 hover:bg-teal-800 text-white shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
               >
                 <span>Start Negotiation</span>
                 <ArrowRight className="w-4 h-4" />

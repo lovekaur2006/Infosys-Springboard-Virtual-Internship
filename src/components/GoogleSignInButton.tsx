@@ -48,7 +48,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
               className="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-600"
             />
           ) : (
-            <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+            <div className="w-6 h-6 rounded-full bg-teal-700 text-white flex items-center justify-center text-xs font-semibold">
               {(user.displayName || user.email || 'U')[0].toUpperCase()}
             </div>
           )}
@@ -106,7 +106,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         <button
           onClick={onDemoSignIn}
           type="button"
-          className="cursor-pointer px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+          className="cursor-pointer px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:text-teal-700 dark:text-slate-400 dark:hover:text-teal-500 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
           title="Test without Google Cloud OAuth credentials"
         >
           Demo Mode

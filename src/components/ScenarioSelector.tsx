@@ -30,13 +30,13 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
   const getIconForScenario = (id: string) => {
     switch (id) {
       case 'vendor-pricing':
-        return <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+        return <Building2 className="w-5 h-5 text-teal-700 dark:text-teal-500" />;
       case 'job-offer':
         return <Briefcase className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
       case 'budget-allocation':
         return <Coins className="w-5 h-5 text-purple-600 dark:text-purple-400" />;
       default:
-        return <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />;
+        return <Layers className="w-5 h-5 text-teal-800 dark:text-indigo-400" />;
     }
   };
 
@@ -44,7 +44,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
     <section className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-1.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-400 border border-teal-200 dark:border-teal-800 mb-1.5">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Step 1: Negotiation Scenario</span>
           </div>
@@ -66,7 +66,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
               onClick={() => onSelectScenario(scenario)}
               className={`group relative flex flex-col justify-between p-5 rounded-2xl border transition-all cursor-pointer ${
                 isSelected
-                  ? 'bg-white dark:bg-slate-900 border-blue-500 ring-2 ring-blue-500/20 shadow-lg dark:shadow-blue-950/30'
+                  ? 'bg-white dark:bg-slate-900 border-teal-600 ring-2 ring-teal-600/20 shadow-lg dark:shadow-teal-950/30'
                   : 'bg-white/80 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
               }`}
             >
@@ -82,13 +82,13 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
                     </span>
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        isSelected ? 'bg-blue-500 animate-pulse' : 'bg-transparent'
+                        isSelected ? 'bg-teal-600 animate-pulse' : 'bg-transparent'
                       }`}
                     />
                   </div>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug group-hover:text-teal-700 dark:group-hover:text-teal-500 transition-colors">
                   {scenario.title}
                 </h3>
 
@@ -100,7 +100,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
                   <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                      <Users className="w-3.5 h-3.5 text-teal-600" />
                       <span>{scenario.defaultAgents.length} Participating Agents:</span>
                     </span>
                     <span className="font-semibold text-slate-700 dark:text-slate-300">
@@ -129,7 +129,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
                 <span
                   className={
                     isSelected
-                      ? 'text-blue-600 dark:text-blue-400'
+                      ? 'text-teal-700 dark:text-teal-500'
                       : 'text-slate-500 group-hover:text-slate-800 dark:group-hover:text-slate-200'
                   }
                 >
@@ -138,7 +138,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
                 <div
                   className={`p-1 rounded-lg transition-transform ${
                     isSelected
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-teal-700 text-white'
                       : 'text-slate-400 group-hover:translate-x-0.5 group-hover:text-slate-600 dark:group-hover:text-slate-300'
                   }`}
                 >

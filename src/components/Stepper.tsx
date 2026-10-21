@@ -32,7 +32,7 @@ export const Stepper: React.FC<StepperProps> = ({
   const getScenarioIcon = (id: string) => {
     switch (id) {
       case 'vendor-pricing':
-        return <Building2 className="w-3.5 h-3.5 text-blue-600" />;
+        return <Building2 className="w-3.5 h-3.5 text-teal-700" />;
       case 'job-offer':
         return <Briefcase className="w-3.5 h-3.5 text-purple-600" />;
       case 'budget-allocation':
@@ -56,18 +56,18 @@ export const Stepper: React.FC<StepperProps> = ({
                 onClick={() => onSelectStep(step.number as 1 | 2 | 3)}
                 className={`flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-lg transition-all ${
                   isActive
-                    ? 'text-blue-600 font-bold'
+                    ? 'text-teal-700 font-bold'
                     : isCompleted
-                    ? 'text-slate-700 hover:text-blue-600'
+                    ? 'text-slate-700 hover:text-teal-700'
                     : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm ring-4 ring-blue-100'
+                      ? 'bg-teal-700 text-white shadow-sm ring-4 ring-teal-100'
                       : isCompleted
-                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                      ? 'bg-teal-100 text-teal-800 border border-teal-400'
                       : 'bg-slate-100 text-slate-400 border border-slate-200'
                   }`}
                 >
@@ -79,7 +79,7 @@ export const Stepper: React.FC<StepperProps> = ({
               {idx < steps.length - 1 && (
                 <div
                   className={`w-8 h-[2px] rounded ${
-                    isCompleted ? 'bg-blue-400' : 'bg-slate-200'
+                    isCompleted ? 'bg-teal-500' : 'bg-slate-200'
                   }`}
                 />
               )}
@@ -122,13 +122,13 @@ export const Stepper: React.FC<StepperProps> = ({
                     }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold transition-colors ${
                       isSelected
-                        ? 'bg-blue-50 text-blue-700 font-bold'
+                        ? 'bg-teal-50 text-teal-800 font-bold'
                         : 'text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     {getScenarioIcon(scenario.id)}
                     <span className="flex-1 truncate">{scenario.title}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-teal-700" />}
                   </button>
                 );
               })}

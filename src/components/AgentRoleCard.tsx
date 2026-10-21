@@ -92,7 +92,7 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
                   {agent.organization}
                 </span>
               </div>
-              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+              <div className="text-xs font-semibold text-teal-700 dark:text-teal-500 mt-0.5">
                 {agent.roleTitle}
               </div>
             </div>
@@ -118,7 +118,7 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
         <div className="mt-5 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              <Target className="w-4 h-4 text-blue-500" />
+              <Target className="w-4 h-4 text-teal-600" />
               <span>Primary Goal / Objective</span>
             </div>
             {!isEditingGoal ? (
@@ -129,7 +129,7 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
                   setTempMetric(agent.targetMetric);
                   setIsEditingGoal(true);
                 }}
-                className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-medium text-teal-700 dark:text-teal-500 hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Edit2 className="w-3 h-3" />
                 <span>Edit Goal</span>
@@ -147,8 +147,8 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
           </div>
 
           {!isEditingGoal ? (
-            <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-900/40">
-              <div className="text-xs font-bold text-blue-950 dark:text-blue-200 mb-1">
+            <div className="p-3.5 rounded-xl bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200/80 dark:border-teal-900/40">
+              <div className="text-xs font-bold text-teal-950 dark:text-teal-200 mb-1">
                 {agent.targetMetric}
               </div>
               <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -227,7 +227,7 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
               <form onSubmit={handleAddConstraintSubmit} className="flex gap-2 pt-1">
                 <input
                   type="text"
-                  placeholder="e.g. Hard ceiling of $190k / Net-30 requirement"
+                  placeholder="e.g. Hard ceiling of ₹8,00,000 / Net-30 requirement"
                   value={newConstraintInput}
                   onChange={(e) => setNewConstraintInput(e.target.value)}
                   className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
@@ -235,7 +235,7 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
                 />
                 <button
                   type="submit"
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+                  className="px-3 py-1.5 bg-teal-700 text-white rounded-lg text-xs font-semibold hover:bg-teal-800 cursor-pointer"
                 >
                   Add
                 </button>
@@ -283,7 +283,7 @@ export const AgentRoleCard: React.FC<AgentRoleCardProps> = ({
           >
             <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white text-[11px]">
               <span className="flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                <Sparkles className="w-3.5 h-3.5 text-teal-600" />
                 <span>{activePersonalityDef.title} Tactical Stance:</span>
               </span>
               <span className="text-slate-500 dark:text-slate-400 font-normal">

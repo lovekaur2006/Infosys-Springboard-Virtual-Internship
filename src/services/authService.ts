@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import firebaseConfig from '../../firebase-applet-config.json';
+declare global {
+  interface Window {
+    __APP_CONFIG__?: { googleClientId?: string };
+  }
+}
 
 export interface CalendarUser {
   displayName: string | null;
@@ -11,10 +15,13 @@ export interface CalendarUser {
   photoURL: string | null;
 }
 
-export const CALENDAR_SCOPES = [
+export const IDENTITY_SCOPES = [
   'openid',
   'email',
   'profile',
+];
+
+export const CALENDAR_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
 ];
 
@@ -27,16 +34,23 @@ export function getGoogleAuthErrorMessage(error: any): string {
   if (code === 'auth/popup-closed-by-user' || code === 'popup_closed') {
     return 'Google sign-in was cancelled before Calendar access was granted.';
   }
-  if (code === 'auth/access-denied' || code === 'access_denied') {
-    return `Google blocked Calendar authorization for ${window.location.origin}. Check Google Cloud Console: enable the Google Calendar API, add this exact origin under OAuth client Authorized JavaScript origins, and add your account as a test user if the consent screen is in Testing. Google may also require Workspace admin approval.`;
+  if (code === 'auth/access-denied' || code === 'access_denied' || code === 'invalid_request' || code === 'auth/invalid-request') {
+    return `Google rejected the OAuth request from ${window.location.origin}. In Google Cloud Console, open the project that owns this OAuth client and add this exact origin (scheme, hostname, and port) under Google Auth Platform > Clients > Authorized JavaScript origins. For Calendar access, also enable Google Calendar API and configure the calendar.events scope. If the app is in Testing and requests Calendar access, add this account under Audience > Test users. Workspace administrators can also block third-party OAuth apps. Reload after updating the client. Demo access remains available.`;
   }
   if (code === 'auth/unauthorized-domain') {
-    return `This site (${window.location.hostname}) is not authorized by the identity provider. Add the domain to the OAuth client and, if Firebase Auth is used, Firebase Authorized domains.`;
+    return `This site (${window.location.hostname}) is not authorized by the identity provider. Add this origin to the Google OAuth client's Authorized JavaScript origins.`;
+  }
+  if (code === 'invalid_client' || code === 'unauthorized_client') {
+    return 'Google rejected this OAuth client. Check that the configured client ID is a Web application client and that this site origin is listed in its Authorized JavaScript origins.';
   }
   return error?.message || 'Google Sign-In failed. Check the OAuth client and Calendar API configuration.';
 }
 
+const SESSION_USER_KEY = 'parleynet_google_user';
+const SESSION_DEMO_KEY = 'parleynet_demo_session';
 let cachedAccessToken: string | null = null;
+let cachedAccessTokenExpiresAt = 0;
+let cachedIdentityToken: string | null = null;
 let cachedUser: CalendarUser | null = null;
 let gisLoadPromise: Promise<void> | null = null;
 
@@ -51,6 +65,7 @@ declare global {
             prompt?: string;
             callback: (resp: {
               access_token?: string;
+              expires_in?: number;
               error?: string;
               error_description?: string;
             }) => void;
@@ -63,34 +78,38 @@ declare global {
   }
 }
 
-function redirectLanIpToLocalhost(): boolean {
-  const { hostname, port, protocol, pathname, search, hash } = window.location;
-  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname);
-  if (!isIp) return false;
-  const next = `${protocol}//localhost${port ? `:${port}` : ''}${pathname}${search}${hash}`;
-  window.location.replace(next);
-  return true;
-}
-
 function loadGoogleIdentity(): Promise<void> {
   if (window.google?.accounts?.oauth2) return Promise.resolve();
   if (gisLoadPromise) return gisLoadPromise;
 
   gisLoadPromise = new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+    const fail = (error: Error) => {
+      finish();
+      gisLoadPromise = null;
+      reject(error);
+    };
+    const succeed = () => {
+      finish();
+      resolve();
+    };
+    timeoutId = setTimeout(
+      () => fail(new Error('Timed out loading Google Identity Services. Check your network or content blocker.')),
+      10_000
+    );
     const existing = document.querySelector<HTMLScriptElement>(
       'script[src="https://accounts.google.com/gsi/client"]'
     );
     if (existing) {
       const onLoad = () => {
-        if (window.google?.accounts?.oauth2) resolve();
-        else reject(new Error('Google Identity Services loaded but did not initialize'));
+        if (window.google?.accounts?.oauth2) succeed();
+        else fail(new Error('Google Identity Services loaded but did not initialize'));
       };
       existing.addEventListener('load', onLoad, { once: true });
-      existing.addEventListener('error', () => {
-        gisLoadPromise = null;
-        reject(new Error('Failed to load Google Identity Services'));
-      }, { once: true });
-      // A previously loaded script will not emit another load event.
+      existing.addEventListener('error', () => fail(new Error('Failed to load Google Identity Services. Check your network or content blocker.')), { once: true });
       if (window.google?.accounts?.oauth2) onLoad();
       return;
     }
@@ -98,10 +117,9 @@ function loadGoogleIdentity(): Promise<void> {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
-    script.onload = () => resolve();
+    script.onload = () => succeed();
     script.onerror = () => {
-      gisLoadPromise = null;
-      reject(new Error('Failed to load Google Identity Services'));
+      fail(new Error('Failed to load Google Identity Services. Check your network or content blocker.'));
     };
     document.head.appendChild(script);
   });
@@ -128,10 +146,23 @@ async function fetchGoogleProfile(accessToken: string): Promise<CalendarUser> {
  * Initializes auth restoration. Calendar tokens stay in memory only.
  */
 export const initAuth = (
-  onAuthSuccess?: (user: CalendarUser, token: string) => void,
+  onAuthSuccess?: (user: CalendarUser, token: string | null) => void,
   onAuthFailure?: () => void
 ) => {
-  if (cachedUser && cachedAccessToken) {
+  if (!cachedUser) {
+    try {
+      const storedUser = sessionStorage.getItem(SESSION_USER_KEY);
+      if (storedUser) cachedUser = JSON.parse(storedUser) as CalendarUser;
+      if (sessionStorage.getItem(SESSION_DEMO_KEY) === 'true') {
+        cachedAccessToken = 'demo_token';
+        cachedAccessTokenExpiresAt = Number.POSITIVE_INFINITY;
+      }
+    } catch {
+      sessionStorage.removeItem(SESSION_USER_KEY);
+      sessionStorage.removeItem(SESSION_DEMO_KEY);
+    }
+  }
+  if (cachedUser) {
     onAuthSuccess?.(cachedUser, cachedAccessToken);
   } else {
     onAuthFailure?.();
@@ -149,25 +180,22 @@ export const demoSignIn = (): { user: CalendarUser; accessToken: string } => {
     photoURL: null,
   };
   cachedAccessToken = 'demo_token';
+  cachedAccessTokenExpiresAt = Number.POSITIVE_INFINITY;
   cachedUser = demoUser;
+  sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(demoUser));
+  sessionStorage.setItem(SESSION_DEMO_KEY, 'true');
   return { user: demoUser, accessToken: 'demo_token' };
 };
 
 /**
- * Signs in with Google Identity Services (Calendar scope) without Firebase Auth domains.
+ * Signs in with Google Identity Services (Calendar scope).
  */
-export const googleSignIn = async (): Promise<{
-  user: CalendarUser;
-  accessToken: string;
-} | null> => {
-  if (redirectLanIpToLocalhost()) {
-    return null;
-  }
-
+async function requestGoogleToken(scopes: string[]): Promise<{ token: string; expiresIn: number } | null> {
   const envClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
-  const clientId = (envClientId && envClientId.trim().length > 0) ? envClientId : firebaseConfig.oAuthClientId;
-  if (!clientId) {
-    throw new Error('Missing Google OAuth client ID in firebase-applet-config.json or .env.local');
+  const configuredClientId = window.__APP_CONFIG__?.googleClientId || envClientId;
+  const clientId = configuredClientId?.trim();
+  if (!clientId || clientId.includes('REPLACE_WITH')) {
+    throw new Error('Google sign-in is not configured. Set VITE_GOOGLE_CLIENT_ID in .env.local or googleClientId in public/runtime-config.js, then add this site origin to the OAuth client.');
   }
 
   await loadGoogleIdentity();
@@ -178,8 +206,8 @@ export const googleSignIn = async (): Promise<{
   return new Promise((resolve, reject) => {
     const client = window.google!.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: CALENDAR_SCOPES.join(' '),
-      callback: async (response) => {
+      scope: scopes.join(' '),
+      callback: (response) => {
         if (response.error || !response.access_token) {
           const errorMsg =
             response.error_description ||
@@ -198,9 +226,7 @@ export const googleSignIn = async (): Promise<{
           return;
         }
 
-        cachedAccessToken = response.access_token;
-        cachedUser = await fetchGoogleProfile(response.access_token);
-        resolve({ user: cachedUser, accessToken: cachedAccessToken });
+        resolve({ token: response.access_token, expiresIn: response.expires_in || 3600 });
       },
       error_callback: (err) => {
         const message = err?.message || err?.type || 'Google sign-in failed';
@@ -212,28 +238,72 @@ export const googleSignIn = async (): Promise<{
           reject(Object.assign(new Error(message), { code: 'auth/popup-blocked' }));
           return;
         }
-        reject(new Error(message));
+        reject(Object.assign(new Error(message), { code: err?.type === 'unknown' ? 'auth/access-denied' : undefined }));
       },
     });
 
-    client.requestAccessToken({ prompt: 'consent' });
+    // GIS requests consent when a new scope needs it. Avoid forcing the consent
+    // screen on every sign-in or Calendar refresh.
+    client.requestAccessToken();
   });
+}
+
+/** Signs into the workspace using identity scopes only. Calendar access is requested separately when used. */
+export const googleSignIn = async (): Promise<{ user: CalendarUser } | null> => {
+  const result = await requestGoogleToken(IDENTITY_SCOPES);
+  if (!result) return null;
+  cachedIdentityToken = result.token;
+  try {
+    cachedUser = await fetchGoogleProfile(result.token);
+  } catch {
+    cachedUser = { displayName: 'Google user', email: null, photoURL: null };
+  }
+  sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(cachedUser));
+  sessionStorage.removeItem(SESSION_DEMO_KEY);
+  return { user: cachedUser };
+};
+
+/** Requests calendar access only when the user opens or schedules a calendar event. */
+export const googleCalendarSignIn = async (): Promise<{ user: CalendarUser; accessToken: string } | null> => {
+  if (cachedAccessToken && cachedAccessTokenExpiresAt > Date.now() + 60_000) return { user: cachedUser || { displayName: null, email: null, photoURL: null }, accessToken: cachedAccessToken };
+  const result = await requestGoogleToken(CALENDAR_SCOPES);
+  if (!result) return null;
+  cachedAccessToken = result.token;
+  cachedAccessTokenExpiresAt = Date.now() + Math.max(0, result.expiresIn - 60) * 1000;
+  if (!cachedUser) {
+    try {
+      cachedUser = await fetchGoogleProfile(result.token);
+    } catch {
+      cachedUser = { displayName: 'Google user', email: null, photoURL: null };
+    }
+    sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(cachedUser));
+  }
+  return { user: cachedUser, accessToken: result.token };
 };
 
 export const getAccessToken = async (): Promise<string | null> => cachedAccessToken;
 
 export const setCachedAccessToken = (token: string | null) => {
   cachedAccessToken = token;
+  cachedAccessTokenExpiresAt = token ? Date.now() + 3_500_000 : 0;
 };
 
 export const logout = async (): Promise<void> => {
-  const token = cachedAccessToken;
+  const tokens = [cachedAccessToken, cachedIdentityToken].filter((token): token is string => Boolean(token));
   cachedAccessToken = null;
+  cachedAccessTokenExpiresAt = 0;
+  cachedIdentityToken = null;
   cachedUser = null;
-  if (token && window.google?.accounts?.oauth2) {
-    await new Promise<void>((resolve) => {
-      window.google!.accounts.oauth2.revoke(token, () => resolve());
+  sessionStorage.removeItem(SESSION_USER_KEY);
+  sessionStorage.removeItem(SESSION_DEMO_KEY);
+  if (tokens.length && window.google?.accounts?.oauth2) {
+    await Promise.all(tokens.map((token) => new Promise<void>((resolve) => {
+      try {
+        window.google!.accounts.oauth2.revoke(token, () => resolve());
+      } catch {
+        resolve();
+      }
       setTimeout(() => resolve(), 1500);
-    });
+    })));
   }
 };

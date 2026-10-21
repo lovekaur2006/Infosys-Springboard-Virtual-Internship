@@ -97,7 +97,7 @@ export const PREBUILT_SCENARIOS: ScenarioTemplate[] = [
       maxRounds: 4,
     },
     dealZoneSummary: {
-      batnaBuyer: 'Switch secondary analytics workloads to open-source self-hosted cluster with $40k transition cost.',
+      batnaBuyer: 'Switch secondary analytics workloads to open-source self-hosted cluster with ₹40,000 transition cost.',
       batnaSeller: 'Keep contract at standard rack rate without dedicated CSM and reallocate tier-1 engineering support.',
       targetOverlaps: 'Viable settlement zone between ₹7,50,000 - ₹8,00,000 with 2-year commitment and SLA upgrade.',
     },
@@ -254,7 +254,7 @@ export const PREBUILT_SCENARIOS: ScenarioTemplate[] = [
         'Moderates tripartite fiscal hearings, maintains aggregate expenditure limits, and ensures strategic alignment with 2027 board directives.',
       arbitrationRules: [
         'Enforce aggregate capital expenditure ceiling of ₹15,00,000 max',
-        'Verify both departments receive minimum operational viability thresholds ($450k and $400k)',
+        'Verify both departments receive minimum operational viability thresholds (₹5,50,000 and ₹4,50,000)',
         'Evaluate phased rollout milestones across Q3 and Q4',
         'Document final capital allocation decree with ROI milestones',
       ],
@@ -263,7 +263,7 @@ export const PREBUILT_SCENARIOS: ScenarioTemplate[] = [
     dealZoneSummary: {
       batnaBuyer: 'Product defers international mobile app launch and relies on off-the-shelf third-party widgets.',
       batnaSeller: 'Infrastructure delays multi-region hot-standby, accepting single-region disaster recovery risk.',
-      targetOverlaps: 'Product gets $560,000; Infrastructure gets $490,000; total $1,050,000 with $50,000 contingency buffer.',
+      targetOverlaps: 'Product gets ₹7,50,000; Infrastructure gets ₹6,50,000; total ₹14,00,000 with ₹1,00,000 contingency buffer.',
     },
     defaultAgents: [
       {
@@ -276,19 +276,19 @@ export const PREBUILT_SCENARIOS: ScenarioTemplate[] = [
         roleDescription:
           'Drives customer-facing digital transformation, retail mobile experiences, and AI assistant engagement metrics.',
         primaryGoal:
-          'Secure at least $650,000 to launch conversational generative banking, personalized financial health agents, and UI revamp before Q4 consumer holiday peak.',
-        targetMetric: 'Target: $750,000 (Floor: $520,000)',
+          'Secure at least ₹7,50,000 to launch conversational generative banking, personalized financial health agents, and UI revamp before Q4 consumer holiday peak.',
+        targetMetric: 'Target: ₹8,50,000 (Floor: ₹6,50,000)',
         keyConstraints: [
-          'Absolute minimum viable budget of $520,000 to avoid cancelling core engineering contractor squads',
+          'Absolute minimum viable budget of ₹6,50,000 to avoid cancelling core engineering contractor squads',
           'Must commence Phase 1 development within 30 calendar days to hit Q4 launch marketing windows',
           'Requires low-latency LLM inference tier; cannot accept shared slow model pools',
-          'Must retain design partner agency retainer ($80,000 committed)',
+          'Must retain design partner agency retainer (₹1,00,000 committed)',
         ],
         personality: 'Aggressive',
         tacticalNotes:
           'Argues that product innovation generates the revenue that funds all other departments, pointing to 40% projected user engagement growth.',
         openingStance:
-          'Competitors are rolling out AI banking agents this quarter. We require the full $750,000 allocation to preserve market share and drive an estimated $2.8M in net new deposits.',
+          'Competitors are rolling out AI banking agents this quarter. We require the full ₹8,50,000 allocation to preserve market share and drive an estimated ₹35,00,000 in net new deposits.',
       },
       {
         id: 'infra-lead',
@@ -300,34 +300,34 @@ export const PREBUILT_SCENARIOS: ScenarioTemplate[] = [
         roleDescription:
           'Guardian of 99.999% banking availability, regulatory SOC-2 compliance, database encryption, and disaster recovery infrastructure.',
         primaryGoal:
-          'Secure $550,000 to complete multi-region database failover, implement zero-trust cybersecurity posture, and mitigate legacy database vulnerabilities.',
-        targetMetric: 'Target: $600,000 (Floor: $460,000)',
+          'Secure ₹6,50,000 to complete multi-region database failover, implement zero-trust cybersecurity posture, and mitigate legacy database vulnerabilities.',
+        targetMetric: 'Target: ₹7,00,000 (Floor: ₹5,50,000)',
         keyConstraints: [
-          'Regulatory compliance requires SOC-2 Type II audit remediation by November (non-negotiable $220k)',
-          'Absolute operational floor of $460,000; below this, critical disaster recovery must be halted',
+          'Regulatory compliance requires SOC-2 Type II audit remediation by November (non-negotiable ₹2,50,000)',
+          'Absolute operational floor of ₹5,50,000; below this, critical disaster recovery must be halted',
           'Cannot defer multi-region failover tests past September due to payment network audit',
-          'Requires dedicated cloud reserve fund of $60,000 for unexpected peak traffic spikes',
+          'Requires dedicated cloud reserve fund of ₹80,000 for unexpected peak traffic spikes',
         ],
         personality: 'Risk-Averse',
         tacticalNotes:
           'Warns of catastrophic regulatory fines, downtime penalties, and audit failures if infrastructure is underfunded in favor of speculative features.',
         openingStance:
-          'A single security breach or 15-minute banking outage erases all product gains. We must allocate $600,000 immediately to complete zero-trust hardening and database clustering.',
+          'A single security breach or 15-minute banking outage erases all product gains. We must allocate ₹7,00,000 immediately to complete zero-trust hardening and database clustering.',
       },
       {
         id: 'cfo-finance',
         name: 'Claire Kensington',
         roleTitle: 'Chief Financial Officer',
         organization: 'FinCore Executive Committee',
-        avatarIcon: 'DollarSign',
+        avatarIcon: 'Coins',
         themeColor: 'emerald',
         roleDescription:
           'Maintains fiscal discipline, corporate solvency, investor guidance, and capital return on investment.',
         primaryGoal:
-          'Constrain total combined Q3/Q4 capital allocation to under $1,050,000, preserving at least $50,000 unallocated buffer while financing both mission-critical initiatives.',
-        targetMetric: 'Target: Total ≤ $1,050,000 (Hard Cap: $1,100,000)',
+          'Constrain total combined Q3/Q4 capital allocation to under ₹14,00,000, preserving at least ₹1,00,000 unallocated buffer while financing both mission-critical initiatives.',
+        targetMetric: 'Target: Total ≤ ₹14,00,000 (Hard Cap: ₹15,00,000)',
         keyConstraints: [
-          'Strict board ceiling of $1,100,000 total across both projects combined',
+          'Strict board ceiling of ₹15,00,000 total across both projects combined',
           'Requires milestone-based tranche disbursements (50% upfront, 50% upon Q3 audit/launch review)',
           'Requires demonstrable 18-month break-even ROI on the product AI investment',
           'Demands that infrastructure cloud commitments leverage 3-year reserved instances for 25% savings',
@@ -336,7 +336,7 @@ export const PREBUILT_SCENARIOS: ScenarioTemplate[] = [
         tacticalNotes:
           'Mediates between revenue growth and operational safety, challenging inflated estimates while proposing phased disbursement tranches.',
         openingStance:
-          'Your combined requests total $1,350,000 against our maximum pool of $1,100,000. Both projects have merit, but you must find $300,000 in synergies and phased tranches today.',
+          'Your combined requests total ₹15,50,000 against our maximum pool of ₹15,00,000. Both projects have merit, but you must find ₹1,50,000 in synergies and phased tranches today.',
       },
     ],
   },

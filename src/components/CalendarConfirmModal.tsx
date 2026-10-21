@@ -28,17 +28,17 @@ export const CalendarConfirmModal: React.FC<CalendarConfirmModalProps> = ({
   const endDate = new Date(eventDetails.endDateTime);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+    <div className="pn-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="pn-modal-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-gradient-to-r from-teal-700 to-teal-800 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-xs">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-semibold text-base leading-tight">Confirm Calendar Scheduling</h3>
-              <p className="text-xs text-blue-100">Permission verification before writing to Google Calendar</p>
+              <p className="text-xs text-teal-100">Permission verification before writing to Google Calendar</p>
             </div>
           </div>
           <button
@@ -52,9 +52,9 @@ export const CalendarConfirmModal: React.FC<CalendarConfirmModalProps> = ({
 
         {/* Content Body */}
         <div className="p-6 space-y-4">
-          <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
+          <div className="p-3.5 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-teal-700 dark:text-teal-500 shrink-0 mt-0.5" />
+            <div className="text-xs text-teal-900 dark:text-teal-200 leading-relaxed">
               With your permission, this action will create a new scheduled negotiation event in your primary
               Google Calendar. You can modify or remove it in your Google Calendar at any time.
             </div>
@@ -81,7 +81,7 @@ export const CalendarConfirmModal: React.FC<CalendarConfirmModalProps> = ({
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
                 <MapPin className="w-4 h-4 text-slate-400" />
-                <span>{eventDetails.location || 'NegotiateAI Virtual Room'}</span>
+                <span>{eventDetails.location || 'ParleyNet Virtual Room'}</span>
               </div>
             </div>
 
@@ -110,7 +110,7 @@ export const CalendarConfirmModal: React.FC<CalendarConfirmModalProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="cursor-pointer inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors disabled:opacity-50"
+            className="cursor-pointer inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-xl shadow-xs transition-colors disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

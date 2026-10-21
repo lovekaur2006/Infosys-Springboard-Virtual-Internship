@@ -60,7 +60,7 @@ export async function createCalendarEvent(
   const body = {
     summary: event.summary,
     description: event.description,
-    location: event.location || 'NegotiateAI Virtual Room',
+    location: event.location || 'ParleyNet Virtual Room',
     start: {
       dateTime: event.startDateTime,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -108,7 +108,7 @@ export async function listCalendarEvents(accessToken: string): Promise<GoogleCal
   const timeMin = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(
     timeMin
-  )}&maxResults=25&orderBy=startTime&singleEvents=true&q=NegotiateAI`;
+  )}&maxResults=25&orderBy=startTime&singleEvents=true&q=ParleyNet`;
 
   const response = await fetch(url, {
     method: 'GET',

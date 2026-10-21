@@ -97,6 +97,10 @@ export interface NegotiationTurn {
   concessionNote?: string;
   sentiment: 'assertive' | 'collaborative' | 'defensive' | 'mediating';
   leverageScore: number; // 0 - 100
+  decision?: 'opening' | 'accept' | 'counter' | 'reject';
+  decisionRationale?: string;
+  evaluationScore?: number;
+  respondingToTurnId?: string;
 }
 
 export interface SettlementSummary {

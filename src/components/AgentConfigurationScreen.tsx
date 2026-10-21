@@ -56,9 +56,9 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
   const getAgentTheme = (agent: AgentConfig, index: number) => {
     if (index === 0) {
       return {
-        avatarBg: 'bg-blue-600 text-white',
-        roleBadge: 'bg-blue-50 text-blue-700 border-blue-200',
-        ringFocus: 'focus:ring-blue-500',
+        avatarBg: 'bg-teal-700 text-white',
+        roleBadge: 'bg-teal-50 text-teal-800 border-teal-200',
+        ringFocus: 'focus:ring-teal-600',
       };
     }
     if (index === 1) {
@@ -107,14 +107,15 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <div className="pn-page space-y-8 animate-in fade-in duration-200">
       {/* Page Title & Subtitle */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Configure Agents for {scenario.title}
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-teal-700">Define the room · {agents.length} participants</div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+          Shape the negotiation.
         </h1>
         <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
-          Review the agents, their roles, goals and constraints. You can customize the personality for each agent before starting the negotiation.
+          Set each participant’s priorities and boundaries for <strong className="text-slate-800">{scenario.title}</strong>. These positions guide how the conversation unfolds.
         </p>
       </div>
 
@@ -184,13 +185,13 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
                     <div>
                       <div className="flex items-center justify-between">
                         <div className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wide">
-                          <Target className="w-3.5 h-3.5 text-blue-600" />
+                          <Target className="w-3.5 h-3.5 text-teal-700" />
                           Primary Goal
                         </div>
                         {!isEditingThisGoal ? (
                           <button
                             onClick={() => handleStartEditGoal(agent)}
-                            className="text-[10px] text-slate-400 hover:text-blue-600 flex items-center gap-0.5 font-medium"
+                            className="text-[10px] text-slate-400 hover:text-teal-700 flex items-center gap-0.5 font-medium"
                           >
                             <Edit2 className="w-3 h-3" /> Edit
                           </button>
@@ -209,7 +210,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
                           value={tempGoal}
                           onChange={(e) => setTempGoal(e.target.value)}
                           rows={3}
-                          className="mt-1.5 w-full text-xs p-2 rounded-xl border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none text-slate-800"
+                          className="mt-1.5 w-full text-xs p-2 rounded-xl border border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 resize-none text-slate-800"
                         />
                       ) : (
                         <div className="mt-1 text-xs text-slate-800 font-medium leading-relaxed bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
@@ -230,7 +231,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
                             setNewConstraintAgentId(agent.id);
                             setNewConstraintText('');
                           }}
-                          className="text-[10px] text-slate-400 hover:text-blue-600 flex items-center gap-0.5 font-medium"
+                          className="text-[10px] text-slate-400 hover:text-teal-700 flex items-center gap-0.5 font-medium"
                         >
                           <Plus className="w-3 h-3" /> Add
                         </button>
@@ -269,12 +270,12 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
                                 handleAddConstraintSubmit(agent.id);
                               }
                             }}
-                            className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                            className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-100"
                             autoFocus
                           />
                           <button
                             onClick={() => handleAddConstraintSubmit(agent.id)}
-                            className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs"
+                            className="p-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
@@ -303,7 +304,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
                         onChange={(e) =>
                           onUpdatePersonality(agent.id, e.target.value as PersonalityType)
                         }
-                        className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer pr-8"
+                        className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 shadow-2xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-100 cursor-pointer pr-8"
                       >
                         <option value="Risk-Averse">Risk-Averse</option>
                         <option value="Aggressive">Aggressive</option>
@@ -342,7 +343,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
           </button>
           <button
             onClick={onStartNegotiation}
-            className="flex-1 sm:flex-none py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+            className="flex-1 sm:flex-none py-2.5 px-6 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <span>Start Negotiation</span>
             <ArrowRight className="w-4 h-4" />

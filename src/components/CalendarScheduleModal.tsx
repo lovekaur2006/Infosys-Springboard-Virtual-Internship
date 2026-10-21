@@ -36,17 +36,17 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
   const [time, setTime] = useState('10:00');
   const [durationMinutes, setDurationMinutes] = useState(45);
   const [meetingTitle, setMeetingTitle] = useState(
-    `NegotiateAI Session: ${scenario.title}`
+    `ParleyNet Session: ${scenario.title}`
   );
-  const [location, setLocation] = useState('Google Meet / NegotiateAI Virtual Room');
+  const [location, setLocation] = useState('Google Meet / ParleyNet Virtual Room');
 
   useEffect(() => {
     if (!isOpen) return;
     setDate(localDatePlusDays(1));
     setTime('10:00');
     setDurationMinutes(45);
-    setMeetingTitle(`NegotiateAI Session: ${scenario.title}`);
-    setLocation('Google Meet / NegotiateAI Virtual Room');
+    setMeetingTitle(`ParleyNet Session: ${scenario.title}`);
+    setLocation('Google Meet / ParleyNet Virtual Room');
   }, [isOpen, scenario.title]);
 
   if (!isOpen) return null;
@@ -62,7 +62,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
     const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 
     const description = [
-      `🤖 NegotiateAI Scenario: ${scenario.title}`,
+      `🤖 ParleyNet Scenario: ${scenario.title}`,
       `Category: ${scenario.category} (${scenario.complexity} complexity)`,
       `Orchestrator: ${scenario.orchestrator.name} (${scenario.orchestrator.roleTitle})`,
       '',
@@ -75,7 +75,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
       '🎯 Key Agenda & Objectives:',
       ...scenario.orchestrator.arbitrationRules.map((rule, idx) => `${idx + 1}. ${rule}`),
       '',
-      `Generated via Google AI Studio NegotiateAI Module.`,
+      `Generated via Google AI Studio ParleyNet Module.`,
     ].join('\n');
 
     onTriggerConfirmation({
@@ -88,11 +88,11 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+    <div className="pn-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      <div className="pn-modal-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg">
+            <div className="p-1.5 bg-teal-600/20 text-teal-500 rounded-lg">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -118,7 +118,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-900 dark:text-white"
             />
           </div>
 
@@ -132,7 +132,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-900 dark:text-white"
               />
             </div>
             <div>
@@ -144,7 +144,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-900 dark:text-white"
               />
             </div>
           </div>
@@ -157,7 +157,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
               <select
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-900 dark:text-white"
               >
                 <option value={30}>30 Minutes</option>
                 <option value={45}>45 Minutes (Recommended)</option>
@@ -173,14 +173,14 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 text-slate-900 dark:text-white"
               />
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              <Users className="w-3.5 h-3.5 text-blue-500" />
+              <Users className="w-3.5 h-3.5 text-teal-600" />
               <span>Configured Session Attendees ({agents.length} Agents)</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -205,7 +205,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
             </button>
             <button
               type="submit"
-              className="cursor-pointer inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors"
+              className="cursor-pointer inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-xl shadow-xs transition-colors"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>Continue to Confirmation</span>

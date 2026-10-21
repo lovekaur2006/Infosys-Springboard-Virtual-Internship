@@ -36,12 +36,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const summary: SettlementSummary = generateSettlementSummary(scenario, agents);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <div className="pn-page space-y-8 animate-in fade-in duration-200">
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Negotiation Simulation Reports
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-teal-700">After the conversation · Outcome brief</div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+            The deal, at a glance.
           </h1>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
             Analytical summary of agreement terms, boundary compliance, and simulated outcome scorecards for{' '}
@@ -51,9 +52,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
         <button
           onClick={onOpenScheduleModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors self-start"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold hover:bg-teal-100 transition-colors self-start"
         >
-          <Calendar className="w-4 h-4 text-blue-600" />
+          <Calendar className="w-4 h-4 text-teal-700" />
           <span>{isCalendarConnected ? 'Schedule in Google Cal' : 'Connect & Schedule'}</span>
         </button>
       </div>
@@ -82,11 +83,11 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Agreement Score
             </span>
-            <span className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <span className="p-2 rounded-xl bg-teal-50 text-teal-700">
               <TrendingUp className="w-4 h-4" />
             </span>
           </div>
-          <div className="mt-3 text-2xl font-black text-blue-600">
+          <div className="mt-3 text-2xl font-black text-teal-700">
             {summary.agreementScore} / 100
           </div>
           <div className="text-xs text-slate-500 font-medium mt-1">
@@ -117,7 +118,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         {/* Key Terms */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4">
           <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-blue-600" />
+            <FileText className="w-4 h-4 text-teal-700" />
             Agreed Contract Terms
           </div>
 
@@ -162,7 +163,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       {/* Executive Summary */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-2">
         <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-600" />
+          <Sparkles className="w-4 h-4 text-teal-700" />
           Executive Synthesis
         </div>
         <p className="text-xs text-slate-600 leading-relaxed">
@@ -172,7 +173,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         <div className="pt-4 flex justify-end">
           <button
             onClick={onStartNegotiation}
-            className="py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-colors"
+            className="py-2.5 px-5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-colors"
           >
             <span>Run New Arena Simulation</span>
             <ArrowRight className="w-4 h-4" />

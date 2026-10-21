@@ -23,7 +23,7 @@ An interactive multi-agent negotiation simulation and arbitration platform built
 ### Authentication & Integrations
 - **Google Identity Services (GIS)** & **Google OAuth 2.0**: Secure authentication for Google Calendar integration (`calendar.events` scope).
 - **Google Calendar API v3**: Direct scheduling, confirmation, and sync for finalized negotiation sessions.
-- **Firebase Web SDK**: Configuration foundation for cloud applet services.
+- **Kubernetes deployment**: Containerized static frontend with runtime OAuth configuration.
 
 ---
 
@@ -51,12 +51,25 @@ An interactive multi-agent negotiation simulation and arbitration platform built
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
+   For Google Calendar, set `VITE_GOOGLE_CLIENT_ID` in `.env.local`, or configure `googleClientId` in `runtime-config.js` for a container deployment. The OAuth client ID is public; do not put private API keys in the frontend bundle.
 
 4. **Start the development server:**
    ```bash
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Kubernetes deployment
+
+Build and publish the frontend image, then update the image name in `k8s/deployment.yaml`:
+
+```bash
+docker build -t your-registry/negotiateai:latest .
+docker push your-registry/negotiateai:latest
+kubectl apply -f k8s/
+```
+
+Set the Google OAuth client ID in `k8s/runtime-config.yaml` before applying. Configure the OAuth client's authorized JavaScript origin to match the hostname exposed by your Ingress. The app runs as a static SPA behind nginx; no Firebase service is required.
 
 ---
 

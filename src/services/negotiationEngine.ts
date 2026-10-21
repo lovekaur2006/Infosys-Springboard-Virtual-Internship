@@ -120,10 +120,10 @@ export function generateTurnDialogue(
       if (agent.id === 'buyer-procurement') {
         const personalityTone =
           agent.personality === 'Aggressive'
-            ? 'We reviewed your $225k quote and frankly it is completely out of line with current market rates. Our hard cap is $170k. If CloudScale cannot match that with Net-60 terms and a 99.99% uptime guarantee, we are authorized to begin phased migration to DataPeak next week.'
+            ? 'We reviewed your ₹9,50,000 quote and frankly it is completely out of line with current market rates. Our hard cap is ₹7,50,000. If CloudScale cannot match that with Net-60 terms and a 99.99% uptime guarantee, we are authorized to begin phased migration to an alternative provider next week.'
             : agent.personality === 'Collaborative'
-            ? 'Thank you for meeting Marcus. OmniTrans values our partnership with CloudScale, but our IT directive requires reducing our software spend. We are targeting $175k annually. In exchange, we are willing to commit to a 2-year engagement and serve as a public customer reference if you can meet us on pricing and SLA.'
-            : 'From a fiscal risk standpoint, committing over $185k without downside protections is unacceptable to our audit committee. We must have Net-60 terms and strict penalty clauses for any SLA dips below 99.99%. Let us establish a conservative baseline around $178k.';
+            ? 'Thank you for meeting Marcus. OmniTrans values our partnership with CloudScale, but our IT directive requires reducing our software spend. We are targeting ₹7,80,000 annually. In exchange, we are willing to commit to a 2-year engagement and serve as a public customer reference if you can meet us on pricing and SLA.'
+            : 'From a fiscal risk standpoint, committing over ₹8,00,000 without downside protections is unacceptable to our audit committee. We must have Net-60 terms and strict penalty clauses for any SLA dips below 99.99%. Let us establish a conservative baseline around ₹7,70,000.';
 
         return {
           id: `turn-${round}-${agent.id}`,
@@ -135,7 +135,7 @@ export function generateTurnDialogue(
           personality: agent.personality,
           speechText: personalityTone,
           offeredTerms: [
-            { label: 'Proposed Price', value: agent.personality === 'Aggressive' ? '$170,000/yr' : '$175,000/yr' },
+            { label: 'Proposed Price', value: agent.personality === 'Aggressive' ? '₹7,50,000/yr' : '₹7,80,000/yr' },
             { label: 'Payment Terms', value: 'Net-60' },
             { label: 'SLA Requirement', value: '99.99% Guarantee' },
           ],
@@ -147,10 +147,10 @@ export function generateTurnDialogue(
         // seller
         const personalityTone =
           agent.personality === 'Aggressive'
-            ? 'Elena, OmniTrans executed over 40 million critical transactions on our infrastructure this quarter without a millisecond of disruption. Migrating to DataPeak will incur $60k in consulting costs and significant downtime risk. Our renewal is $215k for a 3-year term, and that includes our new Predictive AI Suite.'
+            ? 'Elena, OmniTrans executed over 40 million critical transactions on our infrastructure this quarter without a millisecond of disruption. Migrating to another vendor will incur ₹1,50,000 in consulting costs and significant downtime risk. Our renewal is ₹9,00,000 for a 3-year term, and that includes our new Predictive AI Suite.'
             : agent.personality === 'Collaborative'
-            ? 'I hear your budgetary objectives, Elena. Let us find a package that satisfies your board while ensuring your engineering squads keep uninterrupted compute power. Our list price is $225k, but on a 2-year agreement, I can bring it to $198k and include premium 24/7 dedicated engineering support at no extra charge.'
-            : 'We cannot expose our business to an unsustainable price drop below $205k while maintaining dedicated infrastructure. However, to mitigate your risk, we can structure performance milestones and quarterly technical reviews, provided payments remain on Net-30.';
+            ? 'I hear your budgetary objectives, Elena. Let us find a package that satisfies your board while ensuring your engineering squads keep uninterrupted compute power. Our list price is ₹9,50,000, but on a 2-year agreement, I can bring it to ₹8,40,000 and include premium 24/7 dedicated engineering support at no extra charge.'
+            : 'We cannot expose our business to an unsustainable price drop below ₹8,50,000 while maintaining dedicated infrastructure. However, to mitigate your risk, we can structure performance milestones and quarterly technical reviews, provided payments remain on Net-30.';
 
         return {
           id: `turn-${round}-${agent.id}`,
@@ -162,7 +162,7 @@ export function generateTurnDialogue(
           personality: agent.personality,
           speechText: personalityTone,
           offeredTerms: [
-            { label: 'Proposed Price', value: agent.personality === 'Aggressive' ? '$215,000/yr' : '$198,000/yr' },
+            { label: 'Proposed Price', value: agent.personality === 'Aggressive' ? '₹9,00,000/yr' : '₹8,40,000/yr' },
             { label: 'Term Length', value: '3-Year Agreement' },
             { label: 'Add-ons', value: 'Predictive AI Suite Included' },
           ],
@@ -175,10 +175,10 @@ export function generateTurnDialogue(
       if (agent.id === 'buyer-procurement') {
         const text =
           agent.personality === 'Aggressive'
-            ? '$215k is still above our walkaway threshold. We do not need the Predictive AI Suite if it keeps the price inflated. Drop the unnecessary bells and whistles and get the core infrastructure under $182,000, or we will table this discussion.'
+            ? '₹9,00,000 is still above our walkaway threshold. We do not need the Predictive AI Suite if it keeps the price inflated. Drop the unnecessary bells and whistles and get the core infrastructure under ₹7,90,000, or we will table this discussion.'
             : agent.personality === 'Collaborative'
-            ? 'The Predictive AI Suite is appealing, Marcus. What if we meet in the middle? We will agree to a 24-month commitment at $185,000/year, keeping the AI suite and Net-45 terms, with mutual termination if SLA drops below 99.98%.'
-            : 'Our hard ceiling remains $185,000. If we accept Net-45 instead of Net-60, we must have ironclad SLA credit clauses in writing and an annual review clause after Year 1.';
+            ? 'The Predictive AI Suite is appealing, Marcus. What if we meet in the middle? We will agree to a 24-month commitment at ₹8,00,000/year, keeping the AI suite and Net-45 terms, with mutual termination if SLA drops below 99.98%.'
+            : 'Our hard ceiling remains ₹8,00,000. If we accept Net-45 instead of Net-60, we must have ironclad SLA credit clauses in writing and an annual review clause after Year 1.';
 
         return {
           id: `turn-${round}-${agent.id}`,
@@ -190,7 +190,7 @@ export function generateTurnDialogue(
           personality: agent.personality,
           speechText: text,
           offeredTerms: [
-            { label: 'Counter Price', value: '$185,000/yr' },
+            { label: 'Counter Price', value: '₹8,00,000/yr' },
             { label: 'Term Commitment', value: '2-Year Agreement' },
             { label: 'Payment Terms', value: 'Net-45 Compromise' },
           ],
@@ -201,10 +201,10 @@ export function generateTurnDialogue(
       } else {
         const text =
           agent.personality === 'Aggressive'
-            ? 'I discussed this with our VP of Sales. The lowest we can possibly go is $190,000/year, provided you sign the 2-year agreement before end of month and agree to standard payment milestones.'
+            ? 'I discussed this with our VP of Sales. The lowest we can possibly go is ₹8,20,000/year, provided you sign the 2-year agreement before end of month and agree to standard payment milestones.'
             : agent.personality === 'Collaborative'
-            ? 'We have significant common ground, Elena. If you can do $188,000/year on a 2-year term with Net-45, I will personally guarantee executive sponsor priority and bundle the 99.99% enterprise SLA package without the normal $15k surcharge.'
-            : 'Under our risk guidelines, $188,000 is our absolute floor. At $188,000 with Net-45 and a 2-year term, we protect both parties from inflation and guarantee support continuity.';
+            ? 'We have significant common ground, Elena. If you can do ₹8,10,000/year on a 2-year term with Net-45, I will personally guarantee executive sponsor priority and bundle the 99.99% enterprise SLA package without the normal surcharge.'
+            : 'Under our risk guidelines, ₹8,15,000 is our absolute floor. At ₹8,15,000 with Net-45 and a 2-year term, we protect both parties from inflation and guarantee support continuity.';
 
         return {
           id: `turn-${round}-${agent.id}`,
@@ -216,11 +216,11 @@ export function generateTurnDialogue(
           personality: agent.personality,
           speechText: text,
           offeredTerms: [
-            { label: 'Revised Price', value: '$188,000/yr' },
+            { label: 'Revised Price', value: '₹8,10,000/yr' },
             { label: 'SLA Level', value: '99.99% Enterprise Included' },
             { label: 'Payment Terms', value: 'Net-45' },
           ],
-          concessionNote: 'Vendor moved from $215k to $188k, meeting near buyer boundary.',
+          concessionNote: 'Vendor moved from ₹9,00,000 to ₹8,10,000, meeting near buyer boundary.',
           sentiment: 'collaborative',
           leverageScore: 80,
         };
@@ -237,10 +237,10 @@ export function generateTurnDialogue(
           roleTitle: agent.roleTitle,
           personality: agent.personality,
           speechText:
-            'OmniTrans can finalize at $186,500/year on a 2-year agreement, Net-45 terms, with the 99.99% SLA and dedicated CSM. This stays strictly within our approved budget ceiling while giving CloudScale multi-year revenue certainty.',
+            'OmniTrans can finalize at ₹8,00,000/year on a 2-year agreement, Net-45 terms, with the 99.99% SLA and dedicated CSM. This stays strictly within our approved budget ceiling while giving CloudScale multi-year revenue certainty.',
           offeredTerms: [
-            { label: 'Final Price', value: '$186,500/yr' },
-            { label: 'Duration', value: '2 Years ($373,000 Total)' },
+            { label: 'Final Price', value: '₹8,00,000/yr' },
+            { label: 'Duration', value: '2 Years (₹16,00,000 Total)' },
             { label: 'SLA Guarantee', value: '99.99% with credits' },
           ],
           concessionNote: 'Final compromise offer aligned with procurement mandate.',
@@ -257,11 +257,11 @@ export function generateTurnDialogue(
           roleTitle: agent.roleTitle,
           personality: agent.personality,
           speechText:
-            'Agreed, Elena. At $186,500 per year on a 2-year contract with Net-45 and enterprise SLA tier, we have a deal. I will send over the formal paperwork and initiate provisioning for your team immediately.',
+            'Agreed, Elena. At ₹8,00,000 per year on a 2-year contract with Net-45 and enterprise SLA tier, we have a deal. I will send over the formal paperwork and initiate provisioning for your team immediately.',
           offeredTerms: [
             { label: 'Deal Status', value: 'ACCEPTED' },
-            { label: 'Annual ARR', value: '$186,500' },
-            { label: 'Savings for Buyer', value: '$38,500/yr vs list' },
+            { label: 'Annual ARR', value: '₹8,00,000' },
+            { label: 'Savings for Buyer', value: '₹1,50,000/yr vs list' },
           ],
           concessionNote: 'Full bilateral agreement achieved within mutual deal zone.',
           sentiment: 'collaborative',
@@ -271,16 +271,15 @@ export function generateTurnDialogue(
     }
   }
 
-  // Job Offer Scenario
   if (scenario.id === 'job-offer') {
     if (round === 1) {
       if (agent.id === 'candidate-ai-lead') {
         const text =
           agent.personality === 'Aggressive'
-            ? 'I have an active offer from an established AI lab offering $215,000 base and deep compute grants. To join Apex Robotics, I require a minimum of $210,000 base salary, $120,000 in equity grants, full remote flexibility, and guaranteed access to an 8x H100 cluster for exploratory vision research.'
+            ? 'I have an active offer from an established tech lab offering ₹9,50,000 base and deep compute grants. To join Apex Robotics, I require a minimum of ₹9,20,000 base salary, ₹1,20,000 in equity grants, full remote flexibility, and dedicated GPU compute access for exploratory vision research.'
             : agent.personality === 'Collaborative'
-            ? 'I am very excited about Apex’s robotics roadmap and team. While my competing offer has a high cash component, I value Apex’s mission. If we can reach $205,000 base salary with an attractive signing bonus and flexible remote arrangements, I am ready to commit.'
-            : 'For me, stability and team autonomy are paramount. I need assurances on the $198,000 base floor, 3 days remote per week, and standard double-trigger acceleration on my equity before considering moving from my current role.';
+            ? 'I am very excited about Apex’s robotics roadmap and team. While my competing offer has a high cash component, I value Apex’s mission. If we can reach ₹8,80,000 base salary with an attractive signing bonus and flexible remote arrangements, I am ready to commit.'
+            : 'For me, stability and team autonomy are paramount. I need assurances on an ₹8,50,000 base floor, 3 days remote per week, and standard acceleration on my equity before considering moving from my current role.';
 
         return {
           id: `turn-${round}-${agent.id}`,
@@ -292,9 +291,9 @@ export function generateTurnDialogue(
           personality: agent.personality,
           speechText: text,
           offeredTerms: [
-            { label: 'Requested Base', value: '$208,000 - $210,000' },
+            { label: 'Requested Base', value: '₹9,00,000 - ₹9,20,000' },
             { label: 'Remote Flexibility', value: 'Full Remote / 4 days WFH' },
-            { label: 'Compute Allocation', value: 'Dedicated 8x H100s' },
+            { label: 'Compute Allocation', value: 'Dedicated GPU Quota' },
           ],
           concessionNote: 'Stated key requirements anchored against competing lab offer.',
           sentiment: agent.personality === 'Aggressive' ? 'assertive' : 'collaborative',
@@ -303,10 +302,10 @@ export function generateTurnDialogue(
       } else {
         const text =
           agent.personality === 'Aggressive'
-            ? 'Zachary, our Level 6 engineering band is strictly calibrated across the entire engineering department. Our base salary cap is $195,000. However, we can compensate with $130,000 in high-growth equity and performance milestone bonuses.'
+            ? 'Zachary, our Level 6 engineering band is strictly calibrated across the entire engineering department. Our base salary cap is ₹8,20,000. However, we can compensate with ₹1,30,000 in high-growth equity and performance milestone bonuses.'
             : agent.personality === 'Collaborative'
-            ? 'We respect your expertise and want you leading this stack, Zachary. While our salary band caps base compensation at $205,000 to maintain internal fairness with current staff, we can bridge the cash gap with a $35,000 upfront signing bonus and hybrid flexibility.'
-            : 'We must adhere to our compensation committee guidelines: base salary cannot exceed $200,000. We also require at least 2 days a month on-site for real robot sensor calibrations. We can, however, offer accelerated 6-month equity vesting tranches.';
+            ? 'We respect your expertise and want you leading this stack, Zachary. While our salary band caps base compensation at ₹8,60,000 to maintain internal fairness with current staff, we can bridge the cash gap with a ₹40,000 upfront signing bonus and hybrid flexibility.'
+            : 'We must adhere to our compensation committee guidelines: base salary cannot exceed ₹8,40,000. We also require at least 2 days a month on-site for real robot sensor calibrations. We can, however, offer accelerated 6-month equity vesting tranches.';
 
         return {
           id: `turn-${round}-${agent.id}`,
@@ -318,9 +317,9 @@ export function generateTurnDialogue(
           personality: agent.personality,
           speechText: text,
           offeredTerms: [
-            { label: 'Offered Base', value: '$200,000' },
-            { label: 'Signing Bonus', value: '$35,000 One-time' },
-            { label: 'Equity Grant', value: '$130,000 / 4-yr' },
+            { label: 'Offered Base', value: '₹8,40,000' },
+            { label: 'Signing Bonus', value: '₹40,000 One-time' },
+            { label: 'Equity Grant', value: '₹1,30,000 / 4-yr' },
           ],
           concessionNote: 'Offered signing bonus to bridge gap without violating base band ceiling.',
           sentiment: 'collaborative',
@@ -339,10 +338,10 @@ export function generateTurnDialogue(
           roleTitle: agent.roleTitle,
           personality: agent.personality,
           speechText:
-            'I appreciate the signing bonus structure, Sarah. If we can lock in $204,000 base, a $38,000 signing bonus, 80% remote flexibility with quarterly hardware test weeks on-site, and dedicated GPU compute quota, I am thrilled to accept.',
+            'I appreciate the signing bonus structure, Sarah. If we can lock in ₹8,70,000 base, a ₹50,000 signing bonus, 80% remote flexibility with quarterly hardware test weeks on-site, and dedicated GPU compute quota, I am thrilled to accept.',
           offeredTerms: [
-            { label: 'Final Base Salary', value: '$204,000' },
-            { label: 'Signing Bonus', value: '$38,000' },
+            { label: 'Final Base Salary', value: '₹8,70,000' },
+            { label: 'Signing Bonus', value: '₹50,000' },
             { label: 'Work Arrangement', value: 'Remote with quarterly on-sites' },
           ],
           concessionNote: 'Adjusted remote request to accommodate hardware testing needs.',
@@ -359,11 +358,11 @@ export function generateTurnDialogue(
           roleTitle: agent.roleTitle,
           personality: agent.personality,
           speechText:
-            'That works within our band approvals! Base of $204,000, $38,000 signing bonus, $140,000 in equity grants, and priority access to our cluster. Welcome to Apex Robotics, Zachary!',
+            'That works within our band approvals! Base of ₹8,70,000, ₹50,000 signing bonus, ₹1,40,000 in equity grants, and priority access to our cluster. Welcome to Apex Robotics, Zachary!',
           offeredTerms: [
             { label: 'Offer Status', value: 'ACCEPTED' },
-            { label: 'Total Year-1 Cash', value: '$242,000' },
-            { label: 'Equity Value', value: '$140,000' },
+            { label: 'Total Year-1 Cash', value: '₹9,20,000' },
+            { label: 'Equity Value', value: '₹1,40,000' },
           ],
           concessionNote: 'Full alignment reached within internal parity guidelines.',
           sentiment: 'collaborative',
@@ -385,9 +384,9 @@ export function generateTurnDialogue(
         roleTitle: agent.roleTitle,
         personality: agent.personality,
         speechText:
-          'Product Innovation is requesting $700,000. Customer expectations for AI banking assistants are peaking, and delaying rollout to Q1 will cost us hundreds of thousands in deposit acquisition. We must launch by October.',
+          'Product Innovation is requesting ₹8,50,000. Customer expectations for AI banking assistants are peaking, and delaying rollout will cost us millions in deposit acquisition. We must launch before Q4.',
         offeredTerms: [
-          { label: 'Requested Budget', value: '$700,000' },
+          { label: 'Requested Budget', value: '₹8,50,000' },
           { label: 'Target Launch', value: 'Q3/Q4 Early Peak' },
         ],
         sentiment: 'assertive',
@@ -403,10 +402,10 @@ export function generateTurnDialogue(
         roleTitle: agent.roleTitle,
         personality: agent.personality,
         speechText:
-          'We cannot deploy generative AI on top of unhardened systems. Our SOC-2 Type II audit remediation is legally mandated and requires $220,000 minimum, plus $350,000 for multi-region database failover. Infrastructure requires $570,000.',
+          'We cannot deploy generative AI on top of unhardened systems. Our SOC-2 Type II audit remediation is legally mandated and requires ₹2,50,000 minimum, plus ₹4,50,000 for multi-region database failover. Infrastructure requires ₹7,00,000.',
         offeredTerms: [
-          { label: 'Requested Budget', value: '$570,000' },
-          { label: 'Compliance Non-Negotiable', value: '$220,000 SOC-2' },
+          { label: 'Requested Budget', value: '₹7,00,000' },
+          { label: 'Compliance Non-Negotiable', value: '₹2,50,000 SOC-2' },
         ],
         sentiment: 'defensive',
         leverageScore: 75,
@@ -422,10 +421,10 @@ export function generateTurnDialogue(
         roleTitle: agent.roleTitle,
         personality: agent.personality,
         speechText:
-          'Your combined requests equal $1,270,000. Our absolute capex ceiling is $1,100,000, and I insist on keeping a $50,000 reserve buffer. Both teams need to find $220,000 in phased cuts, or the committee will mandate equal percentage cuts across both.',
+          'Your combined requests equal ₹15,50,000. Our absolute capex ceiling is ₹15,00,000, and I insist on keeping a ₹1,00,000 reserve buffer. Both teams need to find ₹1,50,000 in phased cuts, or the committee will mandate equal percentage cuts across both.',
         offeredTerms: [
-          { label: 'Available Capex Pool', value: '$1,050,000 max' },
-          { label: 'Reserve Buffer', value: '$50,000 mandatory' },
+          { label: 'Available Capex Pool', value: '₹14,00,000 max' },
+          { label: 'Reserve Buffer', value: '₹1,00,000 mandatory' },
         ],
         sentiment: 'mediating',
         leverageScore: 90,
@@ -443,9 +442,9 @@ export function generateTurnDialogue(
         roleTitle: agent.roleTitle,
         personality: agent.personality,
         speechText:
-          'Product can phase our initiative: $560,000 for Q3/Q4 launch, deferring custom avatars to next fiscal year. This preserves our core conversational agent while freeing $140,000 for infrastructure compliance.',
+          'Product can phase our initiative: ₹7,50,000 for Q3/Q4 launch, deferring custom avatars to next fiscal year. This preserves our core conversational agent while freeing ₹1,00,000 for infrastructure compliance.',
         offeredTerms: [
-          { label: 'Revised Product Budget', value: '$560,000' },
+          { label: 'Revised Product Budget', value: '₹7,50,000' },
           { label: 'Phasing', value: 'Avatars deferred to next FY' },
         ],
         sentiment: 'collaborative',
@@ -461,9 +460,9 @@ export function generateTurnDialogue(
         roleTitle: agent.roleTitle,
         personality: agent.personality,
         speechText:
-          'By utilizing 3-year reserved instances, Infrastructure can lower database migration costs to $270,000 while fully funding the $220,000 SOC-2 compliance audit. Our revised request is $490,000.',
+          'By utilizing 3-year reserved instances, Infrastructure can lower database migration costs to ₹4,00,000 while fully funding the ₹2,50,000 SOC-2 compliance audit. Our revised request is ₹6,50,000.',
         offeredTerms: [
-          { label: 'Revised Infra Budget', value: '$490,000' },
+          { label: 'Revised Infra Budget', value: '₹6,50,000' },
           { label: 'SOC-2 Compliance', value: '100% Protected' },
         ],
         sentiment: 'collaborative',
@@ -479,11 +478,11 @@ export function generateTurnDialogue(
         roleTitle: agent.roleTitle,
         personality: agent.personality,
         speechText:
-          'Approved! $560,000 for Product Innovation and $490,000 for Infrastructure. Total allocation is exactly $1,050,000, leaving our $50,000 contingency reserve intact. Both projects proceed on phased tranches.',
+          'Approved! ₹7,50,000 for Product Innovation and ₹6,50,000 for Infrastructure. Total allocation is exactly ₹14,00,000, leaving our ₹1,00,000 contingency reserve intact. Both projects proceed on phased tranches.',
         offeredTerms: [
-          { label: 'Product Allocation', value: '$560,000 (53.3%)' },
-          { label: 'Infra Allocation', value: '$490,000 (46.7%)' },
-          { label: 'Reserve Buffer', value: '$50,000 Preserved' },
+          { label: 'Product Allocation', value: '₹7,50,000 (53.6%)' },
+          { label: 'Infra Allocation', value: '₹6,50,000 (46.4%)' },
+          { label: 'Reserve Buffer', value: '₹1,00,000 Preserved' },
         ],
         sentiment: 'mediating',
         leverageScore: 95,
@@ -678,26 +677,26 @@ export function generateSettlementSummary(
       title: 'Bilateral SaaS Enterprise Renewal Agreement Executed',
       agreementScore: 94,
       keyTerms: [
-        { term: 'Annual Contract Value', agreedValue: '$186,500 / year (Total $373,000)', satisfaction: 'High' },
+        { term: 'Annual Contract Value', agreedValue: '₹8,00,000 / year (Total ₹16,00,000)', satisfaction: 'High' },
         { term: 'Contract Duration', agreedValue: '2 Years with Annual Review Clause', satisfaction: 'High' },
         { term: 'Service Level Agreement', agreedValue: '99.99% Availability with Penalty Rebates', satisfaction: 'High' },
         { term: 'Payment Cadence', agreedValue: 'Net-45 Invoicing', satisfaction: 'Acceptable' },
-        { term: 'Included Enterprise Value', agreedValue: 'Dedicated CSM + Predictive AI Tier', satisfaction: 'High' },
+        { term: 'Included Enterprise Value', agreedValue: 'Dedicated CSM + 2 Years Warranty', satisfaction: 'High' },
       ],
       constraintCompliance: [
         {
           agentName: agents[0]?.name || 'Elena Rostova',
           compliant: true,
-          notes: 'Met budget cap ($186.5k ≤ $185k target threshold variance + value bundle), secured 99.99% SLA.',
+          notes: 'Met budget cap (₹8,00,000 ≤ ₹8,00,000 ceiling), secured 99.99% SLA and warranty.',
         },
         {
           agentName: agents[1]?.name || 'Marcus Vance',
           compliant: true,
-          notes: 'Preserved ARR above $188k floor, secured 2-year commitment, bundled premium tier.',
+          notes: 'Preserved ARR at ₹8,00,000 floor, secured 2-year commitment, bundled premium tier.',
         },
       ],
       executiveSummary:
-        'The Orchestrator concluded a successful 2-year enterprise agreement at $186,500/yr. Procurement realized $38,500 in recurring annual savings, while CloudScale locked in $373,000 total contract value with high retention certainty.',
+        'The Orchestrator concluded a successful 2-year enterprise agreement at ₹8,00,000/yr. Procurement realized ₹1,50,000 in recurring annual savings vs list, while CloudScale locked in ₹16,00,000 total contract value with high retention certainty.',
     };
   }
 
@@ -707,26 +706,26 @@ export function generateSettlementSummary(
       title: 'Senior Staff AI Engineer Employment Package Finalized',
       agreementScore: 96,
       keyTerms: [
-        { term: 'Base Annual Salary', agreedValue: '$204,000 / year', satisfaction: 'High' },
-        { term: 'Upfront Signing Bonus', agreedValue: '$38,000 lump sum', satisfaction: 'High' },
-        { term: 'Equity (RSUs)', agreedValue: '$140,000 grant over 4-year schedule', satisfaction: 'High' },
+        { term: 'Base Annual Salary', agreedValue: '₹8,70,000 / year', satisfaction: 'High' },
+        { term: 'Upfront Signing Bonus', agreedValue: '₹50,000 lump sum', satisfaction: 'High' },
+        { term: 'Equity (RSUs)', agreedValue: '₹1,40,000 grant over 4-year schedule', satisfaction: 'High' },
         { term: 'Work Model', agreedValue: '80% Remote with quarterly on-site hardware test weeks', satisfaction: 'High' },
-        { term: 'Research Compute Grant', agreedValue: 'Priority 8x H100 GPU cluster access', satisfaction: 'High' },
+        { term: 'Research Compute Grant', agreedValue: 'Priority GPU cluster access', satisfaction: 'High' },
       ],
       constraintCompliance: [
         {
           agentName: agents[0]?.name || 'Dr. Zachary Chen',
           compliant: true,
-          notes: 'Total Year-1 compensation exceeds $242k cash + equity, compute resources guaranteed, remote flexibility granted.',
+          notes: 'Total Year-1 compensation reaches ₹9,20,000 cash + equity, compute resources guaranteed, remote flexibility granted.',
         },
         {
           agentName: agents[1]?.name || 'Sarah Jenkins',
           compliant: true,
-          notes: 'Base salary ($204,000) stayed strictly within the Level 6 band cap ($205,000), signing bonus within budget.',
+          notes: 'Base salary (₹8,70,000) stayed strictly within compensation band (₹7,00,000 - ₹9,00,000), signing bonus within budget.',
         },
       ],
       executiveSummary:
-        'Apex Robotics successfully closed Dr. Zachary Chen by bridging the cash gap via a signing bonus and compute guarantees while keeping base pay within Grade L6 equity constraints.',
+        'Apex Robotics successfully closed the candidate by bridging the cash gap via a ₹50,000 signing bonus and compute guarantees while keeping base pay within Grade L6 equity constraints.',
     };
   }
 
@@ -736,30 +735,30 @@ export function generateSettlementSummary(
     title: 'Tripartite Capital Expenditure Allocation Decreed',
     agreementScore: 92,
     keyTerms: [
-      { term: 'Product Innovation Allocation', agreedValue: '$560,000 (Phase 1 AI & Mobile)', satisfaction: 'Acceptable' },
-      { term: 'Infrastructure & Security Allocation', agreedValue: '$490,000 (SOC-2 Audit + Multi-Region)', satisfaction: 'High' },
-      { term: 'Total Disbursed Capex', agreedValue: '$1,050,000 (Within $1,100,000 cap)', satisfaction: 'High' },
-      { term: 'Corporate Contingency Reserve', agreedValue: '$50,000 Unallocated Safety Buffer', satisfaction: 'High' },
+      { term: 'Product Innovation Allocation', agreedValue: '₹7,50,000 (Phase 1 AI & Mobile)', satisfaction: 'Acceptable' },
+      { term: 'Infrastructure & Security Allocation', agreedValue: '₹6,50,000 (SOC-2 Audit + Multi-Region)', satisfaction: 'High' },
+      { term: 'Total Disbursed Capex', agreedValue: '₹14,00,000 (Within ₹15,00,000 cap)', satisfaction: 'High' },
+      { term: 'Corporate Contingency Reserve', agreedValue: '₹1,00,000 Unallocated Safety Buffer', satisfaction: 'High' },
       { term: 'Disbursement Structure', agreedValue: 'Two milestone tranches contingent on Q3 audit', satisfaction: 'Acceptable' },
     ],
     constraintCompliance: [
       {
         agentName: agents[0]?.name || 'Jordan Rivera',
         compliant: true,
-        notes: 'Secured $560,000 (above $520,000 operational viability floor) to deploy conversational AI on time.',
+        notes: 'Secured ₹7,50,000 (above ₹6,50,000 operational viability floor) to deploy conversational AI on time.',
       },
       {
         agentName: agents[1]?.name || 'Devon Takahashi',
         compliant: true,
-        notes: 'Guaranteed 100% of $220,000 required for regulatory SOC-2 compliance plus reserved database instances.',
+        notes: 'Guaranteed 100% of ₹2,50,000 required for regulatory SOC-2 compliance plus reserved database instances.',
       },
       {
         agentName: agents[2]?.name || 'Claire Kensington',
         compliant: true,
-        notes: 'Maintained total expenditure under $1,050,000 and preserved $50,000 contingency buffer.',
+        notes: 'Maintained total expenditure under ₹14,00,000 and preserved ₹1,00,000 contingency buffer.',
       },
     ],
     executiveSummary:
-      'The Corporate Budget Committee successfully balanced competitive innovation with mission-critical compliance, staying $50,000 under the board ceiling.',
+      'The Corporate Budget Committee successfully balanced competitive innovation with mission-critical compliance, staying ₹1,00,000 under the board ceiling of ₹15,00,000.',
   };
 }

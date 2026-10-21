@@ -102,7 +102,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             type="button"
             onClick={onStartNegotiation}
             disabled={!validation.isValid}
-            className="cursor-pointer inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-gradient-to-r from-teal-700 to-teal-800 hover:from-teal-800 hover:to-teal-900 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Play className="w-4 h-4 fill-white" />
             <span>Start Negotiation</span>
@@ -114,7 +114,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             onClick={onOpenCalendarModal}
             className="cursor-pointer inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition-colors"
           >
-            <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <Calendar className="w-4 h-4 text-teal-700 dark:text-teal-500" />
             <span>Schedule Session on Calendar</span>
           </button>
         </div>

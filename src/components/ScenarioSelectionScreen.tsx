@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Handshake,
   Briefcase,
@@ -29,15 +29,33 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
   onSelectScenario,
   onProceedToConfig,
 }) => {
+  const [pendingScenarioId, setPendingScenarioId] = useState<string | null>(null);
+  const [animatedScenarioId, setAnimatedScenarioId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pendingScenarioId) return;
+    const timer = window.setTimeout(() => {
+      onProceedToConfig();
+      setPendingScenarioId(null);
+    }, 520);
+    return () => window.clearTimeout(timer);
+  }, [pendingScenarioId, onProceedToConfig]);
+
+  const chooseScenario = (scenario: ScenarioTemplate) => {
+    onSelectScenario(scenario);
+    setAnimatedScenarioId(null);
+    window.requestAnimationFrame(() => setAnimatedScenarioId(scenario.id));
+  };
+
   const getCardTheme = (id: string) => {
     switch (id) {
       case 'vendor-pricing':
         return {
-          icon: <Handshake className="w-6 h-6 text-blue-600" />,
-          iconBg: 'bg-blue-100',
-          buttonBg: 'bg-[#2563EB] hover:bg-blue-700 text-white',
-          badgeText: 'text-blue-600',
-          borderHover: 'hover:border-blue-400',
+          icon: <Handshake className="w-6 h-6 text-teal-700" />,
+          iconBg: 'bg-teal-100',
+          buttonBg: 'bg-[#2563EB] hover:bg-teal-800 text-white',
+          badgeText: 'text-teal-700',
+          borderHover: 'hover:border-teal-500',
         };
       case 'job-offer':
         return {
@@ -60,15 +78,16 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <div className="pn-scenario-selection space-y-8 animate-in fade-in duration-200">
       {/* Header section with note */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
         <div className="max-w-2xl">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Choose a Negotiation Scenario
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-teal-700">Choose your starting point · 01</div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+            Pick the conversation.
           </h1>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Select a pre-built scenario to get started. Each scenario comes with predefined agents, goals, constraints and default personalities. You can customize the personalities before starting.
+            Start from a focused playbook, then tune the people, priorities, and boundaries around the table.
           </p>
         </div>
 
@@ -93,15 +112,15 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
           return (
             <div
               key={scenario.id}
-              onClick={() => onSelectScenario(scenario)}
-              className={`bg-white rounded-3xl p-6 border transition-all duration-200 flex flex-col justify-between cursor-pointer relative shadow-xs hover:shadow-lg ${theme.borderHover} ${
+              onClick={() => chooseScenario(scenario)}
+              className={`pn-scenario-card bg-white rounded-3xl p-6 border transition-all duration-200 flex flex-col justify-between cursor-pointer relative shadow-xs hover:shadow-lg ${theme.borderHover} ${
                 isSelected
-                  ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                  ? `is-selected ${animatedScenarioId === scenario.id ? 'is-animating' : ''} border-teal-600 ring-2 ring-teal-600/20 shadow-md`
                   : 'border-slate-200/90'
               }`}
             >
               {isSelected && (
-                <div className="absolute top-4 right-4 flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+                <div className="absolute top-4 right-4 flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Active
                 </div>
@@ -110,7 +129,7 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
               <div>
                 {/* Icon rounded badge */}
                 <div
-                  className={`w-14 h-14 rounded-2xl ${theme.iconBg} flex items-center justify-center mb-5 shadow-xs`}
+                  className={`pn-scenario-icon w-14 h-14 rounded-2xl ${theme.iconBg} flex items-center justify-center mb-5 shadow-xs`}
                 >
                   {theme.icon}
                 </div>
@@ -191,8 +210,8 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSelectScenario(scenario);
-                    onProceedToConfig();
+                    chooseScenario(scenario);
+                    setPendingScenarioId(scenario.id);
                   }}
                   className={`w-full py-3 px-4 rounded-xl font-bold text-xs tracking-wide shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] ${theme.buttonBg}`}
                 >

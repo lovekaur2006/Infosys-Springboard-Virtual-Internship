@@ -40,9 +40,10 @@ import {
 import { PERSONALITY_DEFINITIONS } from '../data/scenarios.ts';
 import {
   generateSettlementSummary,
-  generateTurnDialogue,
   generateAIResponseToUserInput,
 } from '../services/negotiationEngine.ts';
+import { evaluateCounteroffer, getRoleConcessionHistory } from '../services/counterofferEvaluation.ts';
+import { advanceAutonomousNegotiation } from '../services/autonomousNegotiation.ts';
 
 interface NegotiationArenaProps {
   scenario: ScenarioTemplate;
@@ -64,6 +65,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
 
   // Which agent the user is playing as (default is agent[0])
   const [userAgentIdx, setUserAgentIdx] = useState(0);
+  const [analysisAgentId, setAnalysisAgentId] = useState(agents[0]?.id || '');
 
   // Simulation rounds & turns
   const [currentRound, setCurrentRound] = useState(1);
@@ -81,12 +83,18 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const userAgent = agents[userAgentIdx] || agents[0];
   const aiAgent = agents[userAgentIdx === 0 ? 1 : 0] || agents[0];
+  const analysisAgent = agents.find((agent) => agent.id === analysisAgentId) || userAgent;
+  const latestIncomingOffer = [...turns].reverse().find(
+    (turn) => turn.agentId !== analysisAgent.id && turn.offeredTerms?.length
+  );
+  const offerEvaluation = evaluateCounteroffer(analysisAgent, latestIncomingOffer);
+  const roleConcessions = getRoleConcessionHistory(analysisAgent, turns);
 
   // Initialize opening turn when mounted
   useEffect(() => {
     if (turns.length === 0) {
-      const firstTurn = generateTurnDialogue(scenario, agents, 1, 0, []);
-      setTurns([firstTurn]);
+      const firstStep = advanceAutonomousNegotiation(scenario, agents, [], 1);
+      if (firstStep.turn) setTurns([firstStep.turn]);
     }
   }, []);
 
@@ -98,31 +106,12 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   // Autonomous turn advance (AI vs AI mode)
   const advanceAutonomousTurn = () => {
     if (settlement) return;
-
-    const lastTurn = turns[turns.length - 1];
-    const nextAgentIdx =
-      lastTurn?.agentId === agents[0]?.id ? 1 : 0;
-    const nextRound = nextAgentIdx === 0 ? currentRound + 1 : currentRound;
-
-    if (nextRound > scenario.orchestrator.maxRounds) {
+    const result = advanceAutonomousNegotiation(scenario, agents, turns, currentRound);
+    if (result.turn) setTurns((previous) => [...previous, result.turn!]);
+    setCurrentRound(result.round);
+    if (result.outcome) {
       setIsPlaying(false);
-      setSettlement(generateSettlementSummary(scenario, agents));
-      return;
-    }
-
-    const newTurn = generateTurnDialogue(
-      scenario,
-      agents,
-      nextRound,
-      nextAgentIdx,
-      turns
-    );
-    setTurns((prev) => [...prev, newTurn]);
-    setCurrentRound(nextRound);
-
-    if (nextRound === scenario.orchestrator.maxRounds && nextAgentIdx === 1) {
-      setIsPlaying(false);
-      setSettlement(generateSettlementSummary(scenario, agents));
+      setSettlement(result.outcome);
     }
   };
 
@@ -249,8 +238,8 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     setUserInputText('');
     setCustomPriceTerm('');
     setCustomDurationTerm('');
-    const firstTurn = generateTurnDialogue(scenario, agents, 1, 0, []);
-    setTurns([firstTurn]);
+    const firstStep = advanceAutonomousNegotiation(scenario, agents, [], 1);
+    setTurns(firstStep.turn ? [firstStep.turn] : []);
   };
 
   const getPersonalityIcon = (p: string) => {
@@ -265,7 +254,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="pn-page space-y-6 animate-in fade-in duration-200">
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
@@ -278,7 +267,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-blue-100 text-blue-800">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-teal-100 text-teal-800">
                 {mode === 'interactive' ? 'Interactive Negotiation' : 'Autonomous Simulation'}
               </span>
               <span className="text-xs text-slate-500">
@@ -303,7 +292,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
               }}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 mode === 'interactive'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
+                  ? 'bg-white text-teal-800 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -313,7 +302,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
               onClick={() => setMode('auto')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 mode === 'auto'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
+                  ? 'bg-white text-teal-800 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -330,7 +319,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   isPlaying
                     ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-teal-700 hover:bg-teal-800 text-white'
                 }`}
               >
                 {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-white" />}
@@ -369,7 +358,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
             {/* Arena Header */}
             <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <MessageSquare className="w-4 h-4 text-blue-600" />
+                <MessageSquare className="w-4 h-4 text-teal-700" />
                 <span>Negotiation Arena ({turns.length} Turns)</span>
               </div>
 
@@ -379,8 +368,12 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                   <span>Playing as:</span>
                   <select
                     value={userAgentIdx}
-                    onChange={(e) => setUserAgentIdx(Number(e.target.value))}
-                    className="font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-0.5 text-xs focus:outline-none"
+                    onChange={(e) => {
+                      const nextIndex = Number(e.target.value);
+                      setUserAgentIdx(nextIndex);
+                      setAnalysisAgentId(agents[nextIndex]?.id || '');
+                    }}
+                    className="font-bold text-teal-800 bg-teal-50 border border-teal-200 rounded-lg px-2 py-0.5 text-xs focus:outline-none"
                   >
                     {agents.map((a, idx) => (
                       <option key={a.id} value={idx}>
@@ -397,7 +390,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
               {/* Orchestrator Kickoff Notice */}
               <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs space-y-1">
                 <div className="flex items-center gap-2 font-bold text-indigo-950">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  <ShieldCheck className="w-4 h-4 text-teal-800" />
                   <span>{scenario.orchestrator.name}</span>
                 </div>
                 <p className="text-slate-600 leading-relaxed">
@@ -418,7 +411,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                     key={turn.id || idx}
                     className={`p-4 rounded-2xl border transition-all ${
                       isUserTurn
-                        ? 'bg-blue-50/70 border-blue-200 ml-4 sm:ml-8'
+                        ? 'bg-teal-50/70 border-teal-200 ml-4 sm:ml-8'
                         : 'bg-white border-slate-200/90 shadow-2xs mr-4 sm:mr-8'
                     }`}
                   >
@@ -427,7 +420,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                         <div
                           className={`w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs ${
                             isUserTurn
-                              ? 'bg-blue-600 text-white'
+                              ? 'bg-teal-700 text-white'
                               : 'bg-purple-600 text-white'
                           }`}
                         >
@@ -463,6 +456,16 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                       "{turn.speechText}"
                     </div>
 
+                    {turn.decision && turn.decision !== 'opening' && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2 pl-1">
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${turn.decision === 'accept' ? 'bg-emerald-100 text-emerald-800' : turn.decision === 'reject' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>
+                          {turn.decision === 'accept' ? 'Accepted' : turn.decision === 'reject' ? 'Rejected' : 'Counteroffer'}
+                        </span>
+                        {turn.evaluationScore !== undefined && <span className="text-[9px] font-semibold text-slate-500">Boundary signal {turn.evaluationScore}/100</span>}
+                        {turn.decisionRationale && <span className="text-[9px] text-slate-500">{turn.decisionRationale}</span>}
+                      </div>
+                    )}
+
                     {/* Offered Terms badge pills */}
                     {turn.offeredTerms && turn.offeredTerms.length > 0 && (
                       <div className="pt-2 flex flex-wrap gap-1.5">
@@ -474,7 +477,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                             <span className="font-medium text-slate-500">
                               {term.label}:
                             </span>
-                            <span className="font-bold text-blue-700">
+                            <span className="font-bold text-teal-800">
                               {term.value}
                             </span>
                           </div>
@@ -517,14 +520,14 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                         placeholder="Price (e.g. ₹8,00,000)"
                         value={customPriceTerm}
                         onChange={(e) => setCustomPriceTerm(e.target.value)}
-                        className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg w-32 focus:outline-none focus:ring-1 focus:ring-teal-600"
                       />
                       <input
                         type="text"
                         placeholder="Terms (e.g. 2 Yrs, Net-45)"
                         value={customDurationTerm}
                         onChange={(e) => setCustomDurationTerm(e.target.value)}
-                        className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg w-36 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg w-36 focus:outline-none focus:ring-1 focus:ring-teal-600"
                       />
                     </div>
 
@@ -552,14 +555,14 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                       placeholder={`State your terms or counter-proposal as ${userAgent.name}... (Press Enter to send)`}
                       rows={2}
                       disabled={isAiThinking}
-                      className="flex-1 text-xs p-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none text-slate-800 shadow-2xs"
+                      className="flex-1 text-xs p-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-100 resize-none text-slate-800 shadow-2xs"
                     />
 
                     <div className="flex flex-col gap-1.5">
                       <button
                         onClick={handleSendUserTurn}
                         disabled={!userInputText.trim() || isAiThinking}
-                        className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="p-3 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         title="Send Proposal"
                       >
                         <Send className="w-4 h-4" />
@@ -579,13 +582,13 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                 /* Auto mode footer */
                 <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-blue-500" />
+                    <Clock className="w-3.5 h-3.5 text-teal-600" />
                     <span>Autonomous negotiation running...</span>
                   </div>
                   <button
                     onClick={advanceAutonomousTurn}
                     disabled={isPlaying}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition-colors"
+                    className="px-3 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-semibold text-xs transition-colors"
                   >
                     Trigger Next Step
                   </button>
@@ -593,18 +596,18 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
               )
             ) : (
               /* Concluded banner */
-              <div className="p-4 bg-emerald-50 border-t border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-900">
+              <div className={`p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs ${settlement.status === 'settled' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}>
                 <div className="flex items-center gap-2 font-bold">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span>Agreement reached! Settlement terms verified and recorded.</span>
+                  {settlement.status === 'settled' ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />}
+                  <span>{settlement.status === 'settled' ? 'Agreement reached! Settlement terms verified and recorded.' : 'Negotiation ended without agreement. The final offer did not meet all role boundaries.'}</span>
                 </div>
-                <button
+                {settlement.status === 'settled' && <button
                   onClick={onOpenScheduleModal}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 shrink-0"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>{isCalendarConnected ? 'Schedule in Google Cal' : 'Connect & Schedule'}</span>
-                </button>
+                </button>}
               </div>
             )}
           </div>
@@ -665,6 +668,83 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
             </div>
           </div>
 
+          {/* Role-based counteroffer evaluation and concession tracker */}
+          <section className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-xs" aria-label="Counteroffer evaluation and concessions">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600">Role Intelligence</div>
+                <h3 className="mt-1 text-sm font-extrabold text-slate-900">Counteroffer desk</h3>
+              </div>
+              <TrendingUp className="h-4 w-4 text-indigo-600" />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Evaluate role">
+              {agents.map((agent) => (
+                <button
+                  key={agent.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={analysisAgent.id === agent.id}
+                  onClick={() => setAnalysisAgentId(agent.id)}
+                  className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition ${analysisAgent.id === agent.id ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-800'}`}
+                >
+                  {agent.name}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-slate-50 p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Latest incoming offer</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{latestIncomingOffer ? `${latestIncomingOffer.agentName} · Round ${latestIncomingOffer.round}` : 'Waiting for a counteroffer'}</div>
+                </div>
+                {latestIncomingOffer && <div className={`text-right ${offerEvaluation.score >= 75 ? 'text-emerald-700' : offerEvaluation.score >= 50 ? 'text-amber-700' : 'text-rose-700'}`}>
+                  <div className="text-lg font-black leading-none">{offerEvaluation.score}<span className="text-[10px]">/100</span></div>
+                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wide">{offerEvaluation.label}</div>
+                </div>}
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-600">{offerEvaluation.summary}</p>
+              {latestIncomingOffer?.offeredTerms?.length ? <div className="mt-2 flex flex-wrap gap-1.5">
+                {latestIncomingOffer.offeredTerms.map((term, index) => <span key={`${term.label}-${index}`} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600"><strong className="text-slate-800">{term.label}:</strong> {term.value}</span>)}
+              </div> : null}
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="font-bold uppercase tracking-wide text-slate-500">Role target</span>
+                <span className="font-semibold text-indigo-700">{analysisAgent.targetMetric}</span>
+              </div>
+              <p className="mt-1 text-[10px] leading-4 text-slate-500">{analysisAgent.primaryGoal}</p>
+            </div>
+
+            <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Boundary check</div>
+              {offerEvaluation.signals.map((signal, index) => (
+                <div key={`${signal.constraint}-${index}`} className="flex items-start gap-2 text-[10px] leading-4">
+                  {signal.state === 'met' ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" /> : signal.state === 'at-risk' ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" /> : <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                  <span className="text-slate-600"><strong className="text-slate-800">{signal.constraint}</strong><span className="block text-slate-500">{signal.detail}</span></span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-indigo-700">Suggested next move</div>
+              <p className="mt-1 text-[11px] leading-5 text-indigo-950">{offerEvaluation.nextMove}</p>
+            </div>
+
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Concession history</div>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600">{roleConcessions.length} moves</span>
+              </div>
+              {roleConcessions.length ? <ol className="mt-2 space-y-2">
+                {roleConcessions.slice(-3).reverse().map((item, index) => <li key={`${item.round}-${index}`} className="border-l-2 border-indigo-200 pl-2.5 text-[10px] leading-4 text-slate-600"><strong className="text-slate-800">Round {item.round}:</strong> {item.note}{item.terms.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{item.terms.map((term, termIndex) => <span key={`${term.label}-${termIndex}`} className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px]">{term.label}: {term.value}</span>)}</div>}</li>)}
+              </ol> : <p className="mt-2 text-[10px] leading-4 text-slate-500">No explicit concessions recorded for this role yet. Offers from this role will appear here as the discussion progresses.</p>}
+              <p className="mt-2 text-[9px] leading-4 text-slate-400">Evaluation compares the stated offer terms with this role’s configured boundaries. Confirm ambiguous terms before accepting.</p>
+            </div>
+          </section>
+
           {/* Quick Settlement Summary Card if concluded */}
           {settlement && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 shadow-xs space-y-3 animate-in fade-in duration-200">
@@ -680,13 +760,13 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                   </div>
                 ))}
               </div>
-              <button
+              {settlement.status === 'settled' && <button
                 onClick={onOpenScheduleModal}
                 className="w-full mt-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
               >
                 <Calendar className="w-3.5 h-3.5" />
                 <span>Schedule Execution Session</span>
-              </button>
+              </button>}
             </div>
           )}
         </div>

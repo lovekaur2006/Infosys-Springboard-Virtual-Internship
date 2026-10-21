@@ -22,6 +22,7 @@ export type NavTab = 'home' | 'scenarios' | 'config' | 'review' | 'negotiation' 
 
 interface SidebarProps {
   activeTab: NavTab;
+  isCalendarConnected: boolean;
   onSelectTab: (tab: NavTab) => void;
   user: CalendarUser | null;
   onSignIn: () => void;
@@ -33,6 +34,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
+  isCalendarConnected,
   onSelectTab,
   user,
   onSignIn,
@@ -70,20 +72,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-64 bg-[#0A1628] text-slate-300 flex flex-col justify-between shrink-0 min-h-screen border-r border-slate-800/80 select-none shadow-xl">
+    <aside className="pn-sidebar sticky top-0 flex h-dvh min-h-screen w-full shrink-0 select-none flex-col justify-between border-r border-[#27324a] bg-[#101a32] text-slate-300 shadow-xl md:h-screen md:w-64">
       {/* Top Branding */}
       <div>
         <div className="p-5 border-b border-slate-800/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-xl bg-[#a6f36a] flex items-center justify-center text-[#12251c] shadow-md shadow-black/10">
               <Bot className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white tracking-tight leading-tight">
-                Multi-Agent
+              <div className="text-sm font-extrabold text-white tracking-tight leading-tight">
+                ParleyNet
               </div>
-              <div className="text-[11px] font-medium text-slate-400">
-                Negotiation Simulator
+              <div className="text-[11px] font-medium text-teal-100/60">
+                Negotiation workspace
               </div>
             </div>
           </div>
@@ -102,11 +104,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onSelectTab(item.id)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
+                    ? 'bg-[#a6f36a] text-[#12251c] shadow-md shadow-black/10 font-bold'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
                 }`}
               >
-                <span className={isActive ? 'text-white' : 'text-slate-400'}>
+                <span className={isActive ? 'text-[#173b31]' : 'text-slate-400'}>
                   {item.icon}
                 </span>
                 <span className="flex-1">{item.label}</span>
@@ -125,10 +127,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 space-y-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-blue-400" />
+              <Calendar className="w-3.5 h-3.5 text-teal-500" />
               Calendar Sync
             </span>
-            {user ? (
+            {isCalendarConnected ? (
               <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-500/20" />
             ) : (
               <span className="w-2 h-2 rounded-full bg-slate-600" />
@@ -139,10 +141,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center justify-between pt-1">
               <button
                 onClick={onOpenCalendarEvents}
-                className="text-[11px] font-medium text-blue-400 hover:text-blue-300 truncate max-w-[120px] text-left underline decoration-dotted"
-                title="View scheduled events"
+                className="text-[11px] font-medium text-teal-500 hover:text-teal-400 truncate max-w-[150px] text-left underline decoration-dotted"
+                title={isCalendarConnected ? 'View scheduled events' : 'Connect Google Calendar'}
               >
-                View calendar
+                {isCalendarConnected ? 'View calendar' : 'Connect Google Calendar'}
               </button>
               <button
                 onClick={onSignOut}
@@ -159,14 +161,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 disabled={isLoadingAuth}
                 className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <LogIn className="w-3 h-3 text-blue-400" />
+                <LogIn className="w-3 h-3 text-teal-500" />
                 {isLoadingAuth ? 'Connecting...' : 'Connect Google Cal'}
               </button>
               {onDemoSignIn && (
                 <button
                   onClick={onDemoSignIn}
                   type="button"
-                  className="w-full py-1 px-2 text-[10px] text-slate-400 hover:text-blue-300 hover:bg-slate-800/60 rounded transition-colors text-center cursor-pointer"
+                  className="w-full py-1 px-2 text-[10px] text-slate-400 hover:text-teal-400 hover:bg-slate-800/60 rounded transition-colors text-center cursor-pointer"
                   title="Enable offline calendar mode without Google OAuth"
                 >
                   ⚡ Or enable Demo Mode
@@ -178,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Mascot / Slogan from image */}
         <div className="flex items-center gap-2.5 px-2 py-1 text-slate-400">
-          <div className="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-blue-400">
+          <div className="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-teal-500">
             <Bot className="w-4 h-4" />
           </div>
           <div>

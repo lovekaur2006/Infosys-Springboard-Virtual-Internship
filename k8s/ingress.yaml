@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: negotiateai
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: negotiateai.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: negotiateai
+                port:
+                  number: 80

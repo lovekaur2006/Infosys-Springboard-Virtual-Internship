@@ -48,11 +48,11 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+    <div className="pn-modal-backdrop fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      <div className="pn-modal-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg">
+            <div className="p-1.5 bg-teal-600/20 text-teal-500 rounded-lg">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -76,7 +76,7 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
             <button
               onClick={fetchEvents}
               disabled={loading}
-              className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="flex items-center gap-1 text-xs text-teal-700 dark:text-teal-500 hover:underline"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
@@ -92,7 +92,7 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
 
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center text-slate-400 text-xs gap-2">
-              <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-teal-600/30 border-t-teal-600 rounded-full animate-spin" />
               <span>Fetching events from Google Calendar...</span>
             </div>
           ) : events.length === 0 ? (
@@ -107,7 +107,7 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
                   onClose();
                   onOpenScheduleModal();
                 }}
-                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-xs shadow-xs"
+                className="mt-4 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-medium text-xs shadow-xs"
               >
                 Schedule Session Now
               </button>
@@ -116,11 +116,18 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
             <div className="space-y-3">
               {events.map((ev) => {
                 const startRaw = ev.start?.dateTime || ev.start?.date;
-                const startDate = startRaw ? new Date(startRaw) : null;
+                // Calendar's all-day `date` values are date-only strings. Parse
+                // those as local dates so they don't render on the prior day
+                // in time zones west of UTC.
+                const startDate = startRaw
+                  ? ev.start?.date
+                    ? new Date(`${ev.start.date}T00:00:00`)
+                    : new Date(startRaw)
+                  : null;
                 return (
                   <div
                     key={ev.id}
-                    className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 transition-colors"
+                    className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-700 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -131,7 +138,7 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
                           href={ev.htmlLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                          className="p-1 text-slate-400 hover:text-teal-600 transition-colors"
                           title="Open in Google Calendar"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -140,7 +147,7 @@ export const CalendarEventListModal: React.FC<CalendarEventListModalProps> = ({
                     </div>
                     {startDate && (
                       <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <Clock className="w-3.5 h-3.5 text-blue-500" />
+                        <Clock className="w-3.5 h-3.5 text-teal-600" />
                         <span>
                           {startDate.toLocaleDateString([], {
                             month: 'short',

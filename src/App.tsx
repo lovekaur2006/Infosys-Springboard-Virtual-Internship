@@ -11,6 +11,7 @@ import {
   Info,
   Menu,
   X,
+  Calendar,
 } from 'lucide-react';
 import { AgentConfig, PersonalityType, ScenarioTemplate } from './types.ts';
 import { PREBUILT_SCENARIOS } from './data/scenarios.ts';
@@ -18,9 +19,11 @@ import { validateConfiguration } from './services/negotiationEngine.ts';
 import {
   initAuth,
   googleSignIn,
+  googleCalendarSignIn,
   demoSignIn,
   logout,
   CalendarUser,
+  getGoogleAuthErrorMessage,
 } from './services/authService.ts';
 import {
   CalendarEventPayload,
@@ -30,6 +33,7 @@ import {
 import { Sidebar, NavTab } from './components/Sidebar.tsx';
 import { Stepper } from './components/Stepper.tsx';
 import { ScenarioSelectionScreen } from './components/ScenarioSelectionScreen.tsx';
+import { HomeDashboard } from './components/HomeDashboard.tsx';
 import { AgentConfigurationScreen } from './components/AgentConfigurationScreen.tsx';
 import { ReviewStartScreen } from './components/ReviewStartScreen.tsx';
 import { NegotiationArena } from './components/NegotiationArena.tsx';
@@ -37,6 +41,7 @@ import { ReportsScreen } from './components/ReportsScreen.tsx';
 import { CalendarScheduleModal } from './components/CalendarScheduleModal.tsx';
 import { CalendarConfirmModal } from './components/CalendarConfirmModal.tsx';
 import { CalendarEventListModal } from './components/CalendarEventListModal.tsx';
+import { LoginScreen } from './components/LoginScreen.tsx';
 
 export default function App() {
   // Scenario & Agents State
@@ -48,7 +53,7 @@ export default function App() {
   );
 
   // Active View Tab
-  const [activeTab, setActiveTab] = useState<NavTab>('scenarios');
+  const [activeTab, setActiveTab] = useState<NavTab>('home');
 
   // Mobile sidebar open state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,7 +84,7 @@ export default function App() {
     }, 4500);
   };
 
-  // Initialize Firebase Auth listener on mount
+  // Restore the in-memory Google identity session on mount
   useEffect(() => {
     const unsubscribe = initAuth(
       (currentUser, token) => {
@@ -156,23 +161,12 @@ export default function App() {
       const result = await googleSignIn();
       if (result) {
         setUser(result.user);
-        setAccessToken(result.accessToken);
-        showToast('success', `Signed in as ${result.user.displayName || result.user.email}`);
+        setAccessToken(null);
+        showToast('success', `Signed in as ${result.user.displayName || result.user.email}. Calendar access is requested only when you use calendar features.`);
       }
     } catch (err: any) {
       console.error(err);
-      const code = err?.code || '';
-      const message =
-        code === 'auth/popup-blocked'
-          ? 'Google sign-in popup was blocked. Allow popups for this site and try again.'
-          : code === 'auth/popup-closed-by-user'
-          ? 'Google sign-in was cancelled.'
-          : code === 'auth/access-denied'
-          ? 'Access Blocked: Authorization Error. In Google Cloud Console, add your Gmail under OAuth Consent Screen > Test Users, and add http://localhost:3000 to Authorized JavaScript Origins. Alternatively, click "Demo Mode" below.'
-          : code === 'auth/unauthorized-domain'
-          ? 'Domain not authorized. Add localhost to Authorized JavaScript Origins.'
-          : err?.message || 'Google Sign-In failed.';
-      showToast('error', message);
+      showToast('error', getGoogleAuthErrorMessage(err));
     } finally {
       setIsLoadingAuth(false);
     }
@@ -201,11 +195,9 @@ export default function App() {
   };
 
   const ensureGoogleAccessToken = async (): Promise<string | null> => {
-    if (accessToken) return accessToken;
-
     setIsLoadingAuth(true);
     try {
-      const result = await googleSignIn();
+      const result = await googleCalendarSignIn();
       if (result) {
         setUser(result.user);
         setAccessToken(result.accessToken);
@@ -215,22 +207,16 @@ export default function App() {
       return null;
     } catch (err: any) {
       console.error(err);
-      const code = err?.code || '';
-      const message =
-        code === 'auth/popup-blocked'
-          ? 'Google sign-in popup was blocked. Allow popups for this site and try again.'
-          : code === 'auth/popup-closed-by-user'
-          ? 'Google sign-in was cancelled before Calendar access was granted.'
-          : code === 'auth/access-denied'
-          ? 'Access blocked: The OAuth client is not configured for this origin. Add http://localhost:3000 to Authorized JavaScript Origins in Google Cloud Console > APIs & Services > Credentials.'
-          : code === 'auth/unauthorized-domain'
-          ? 'This domain is not authorized. Add localhost in authorized domains.'
-          : err?.message || 'Google Sign-In failed.';
-      showToast('error', message);
+      showToast('error', getGoogleAuthErrorMessage(err));
       return null;
     } finally {
       setIsLoadingAuth(false);
     }
+  };
+
+  const handleOpenCalendarEvents = async () => {
+    const token = await ensureGoogleAccessToken();
+    if (token) setIsEventListModalOpen(true);
   };
 
   // Handler when schedule modal submits and needs explicit user confirmation
@@ -281,15 +267,26 @@ export default function App() {
     else if (step === 3) setActiveTab('review');
   };
 
+  if (!user) {
+    return (
+      <LoginScreen
+        isLoading={isLoadingAuth}
+        errorMessage={toast?.type === 'error' ? toast.message : undefined}
+        onGoogleSignIn={handleSignIn}
+        onDemoSignIn={handleDemoSignIn}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans antialiased flex flex-col md:flex-row">
+    <div className="pn-shell min-h-screen bg-[#f6f7fb] text-slate-800 font-sans antialiased flex flex-col md:flex-row">
       {/* Mobile Header Bar */}
-      <div className="md:hidden bg-[#0A1628] text-white p-4 flex items-center justify-between border-b border-slate-800">
+      <div className="md:hidden bg-[#101a32] text-white p-4 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-sm">
-            MA
+          <div className="w-8 h-8 rounded-lg bg-[#a6f36a] text-[#12251c] flex items-center justify-center font-extrabold text-sm">
+            PN
           </div>
-          <span className="font-bold text-sm">Negotiation Simulator</span>
+          <span className="font-bold text-sm">ParleyNet</span>
         </div>
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -303,6 +300,7 @@ export default function App() {
       <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block z-30`}>
         <Sidebar
           activeTab={activeTab}
+          isCalendarConnected={Boolean(accessToken)}
           onSelectTab={(tab) => {
             setActiveTab(tab);
             setIsMobileMenuOpen(false);
@@ -311,19 +309,31 @@ export default function App() {
           onSignIn={handleSignIn}
           onSignOut={handleSignOut}
           isLoadingAuth={isLoadingAuth}
-          onOpenCalendarEvents={() => setIsEventListModalOpen(true)}
+          onOpenCalendarEvents={handleOpenCalendarEvents}
           onDemoSignIn={handleDemoSignIn}
         />
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 lg:p-10 space-y-8">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#f5f7f6]">
+        <div className="hidden md:block border-b border-[#e6e9f0] bg-white/85 backdrop-blur-sm">
+          <div className="mx-auto flex h-[62px] max-w-7xl items-center justify-between px-8 lg:px-10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#101a32] text-[10px] font-black tracking-tight text-[#a6f36a]">PN</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">ParleyNet <span className="mx-1.5 text-slate-300">/</span> Workspace</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden lg:block max-w-[240px] truncate text-xs font-semibold text-slate-500">{selectedScenario.title}</div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#dbe7d3] bg-[#f2f8ed] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#3e672e]"><span className="h-1.5 w-1.5 rounded-full bg-[#73be4f]" /> Workspace ready</span>
+              <button onClick={handleOpenCalendarEvents} className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-teal-300 hover:text-teal-800" aria-label="Open calendar"><Calendar className="h-4 w-4" /></button>
+            </div>
+          </div>
+        </div>
+        <div className="pn-content flex-1 max-w-7xl w-full mx-auto px-4 pb-8 pt-8 sm:px-8 sm:pb-10 sm:pt-12 lg:px-10 lg:pt-14 space-y-8">
           {/* Top Stepper (Rendered during workflow views) */}
           {(activeTab === 'scenarios' ||
             activeTab === 'config' ||
-            activeTab === 'review' ||
-            activeTab === 'home') && (
+            activeTab === 'review') && (
             <Stepper
               currentStep={currentStepperStep}
               onSelectStep={handleSelectStepperStep}
@@ -333,7 +343,16 @@ export default function App() {
           )}
 
           {/* Screen 1: Choose Negotiation Scenario */}
-          {(activeTab === 'scenarios' || activeTab === 'home') && (
+          {activeTab === 'home' && (
+            <HomeDashboard
+              selectedScenario={selectedScenario}
+              onSelectScenario={handleSelectScenario}
+              onStart={() => setActiveTab('config')}
+              onViewScenarios={() => setActiveTab('scenarios')}
+            />
+          )}
+
+          {activeTab === 'scenarios' && (
             <ScenarioSelectionScreen
               selectedScenario={selectedScenario}
               onSelectScenario={handleSelectScenario}
@@ -399,7 +418,7 @@ export default function App() {
               ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
               : toast.type === 'error'
               ? 'bg-rose-50 border-rose-300 text-rose-900'
-              : 'bg-blue-50 border-blue-300 text-blue-900'
+              : 'bg-teal-50 border-teal-400 text-teal-900'
           }`}
         >
           {toast.type === 'success' && (
@@ -409,7 +428,7 @@ export default function App() {
             <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
           )}
           {toast.type === 'info' && (
-            <Info className="w-5 h-5 text-blue-600 shrink-0" />
+            <Info className="w-5 h-5 text-teal-700 shrink-0" />
           )}
           <span className="text-xs font-semibold leading-relaxed">{toast.message}</span>
         </div>
