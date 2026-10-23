@@ -8,6 +8,13 @@ spec:
     - host: negotiateai.example.com
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: negotiateai-api
+                port:
+                  number: 3001
           - path: /
             pathType: Prefix
             backend:

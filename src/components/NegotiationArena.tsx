@@ -44,6 +44,7 @@ import {
 } from '../services/negotiationEngine.ts';
 import { evaluateCounteroffer, getRoleConcessionHistory } from '../services/counterofferEvaluation.ts';
 import { advanceAutonomousNegotiation } from '../services/autonomousNegotiation.ts';
+import { saveNegotiation } from '../services/apiService';
 
 interface NegotiationArenaProps {
   scenario: ScenarioTemplate;
@@ -51,6 +52,7 @@ interface NegotiationArenaProps {
   onBackToConfig: () => void;
   onOpenScheduleModal: () => void;
   isCalendarConnected: boolean;
+  userEmail?: string | null;
 }
 
 export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
@@ -59,6 +61,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   onBackToConfig,
   onOpenScheduleModal,
   isCalendarConnected,
+  userEmail,
 }) => {
   // Negotiation Mode: 'interactive' (You vs AI) or 'auto' (AI vs AI)
   const [mode, setMode] = useState<'interactive' | 'auto'>('interactive');
@@ -97,6 +100,19 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
       if (firstStep.turn) setTurns([firstStep.turn]);
     }
   }, []);
+
+  // Save the finished negotiation to the database
+  useEffect(() => {
+    if (!settlement || !userEmail) return;
+    saveNegotiation({
+      userEmail,
+      scenarioId: scenario.id,
+      scenarioTitle: scenario.title,
+      agents,
+      turns,
+      settlement: { ...settlement },
+    });
+  }, [settlement]);
 
   // Auto-scroll transcript on new turn
   useEffect(() => {

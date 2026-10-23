@@ -1,0 +1,32 @@
+# Local development: PostgreSQL + API. Run the frontend with `npm run dev`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: negotiateai
+      POSTGRES_PASSWORD: negotiateai
+      POSTGRES_DB: negotiateai
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U negotiateai"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile.server
+    environment:
+      DATABASE_URL: postgres://negotiateai:negotiateai@db:5432/negotiateai
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

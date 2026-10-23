@@ -21,7 +21,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: web
-          image: your-registry/negotiateai:latest
+          image: negotiateai:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
