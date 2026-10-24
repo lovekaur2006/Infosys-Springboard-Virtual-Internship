@@ -92,6 +92,7 @@ export default function App() {
   // Google Calendar Auth State
   const [user, setUser] = useState<CalendarUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isCalendarGranted, setIsCalendarGranted] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
 
   // Calendar Modal States
@@ -120,13 +121,15 @@ export default function App() {
   // Restore the in-memory Google identity session on mount
   useEffect(() => {
     const unsubscribe = initAuth(
-      (currentUser, token) => {
+      (currentUser, token, calendarGranted) => {
         setUser(currentUser);
         setAccessToken(token);
+        setIsCalendarGranted(calendarGranted);
       },
       () => {
         setUser(null);
         setAccessToken(null);
+        setIsCalendarGranted(false);
       }
     );
     return () => unsubscribe();
@@ -227,6 +230,7 @@ export default function App() {
         }
         setUser(result.user);
         setAccessToken(result.accessToken);
+        setIsCalendarGranted(true); // Calendar scope granted alongside Google sign-in
         showToast('success', `Signed in as ${result.user.displayName || result.user.email}. Google Calendar is connected.`);
       }
     } catch (err: any) {
@@ -244,6 +248,7 @@ export default function App() {
     const result = demoSignIn();
     setUser(result.user);
     setAccessToken(result.accessToken);
+    setIsCalendarGranted(true); // Demo mode activates calendar features
     showToast('success', 'Demo Calendar Mode activated! You can test session scheduling.');
   };
 
@@ -252,6 +257,7 @@ export default function App() {
     await logout();
     setUser(null);
     setAccessToken(null);
+    setIsCalendarGranted(false);
     showToast('info', 'Signed out from Google Calendar.');
   };
 
@@ -268,6 +274,7 @@ export default function App() {
       if (result) {
         setUser(result.user);
         setAccessToken(result.accessToken);
+        setIsCalendarGranted(true);
         showToast('success', `Signed in as ${result.user.displayName || result.user.email}`);
         return result.accessToken;
       }
@@ -368,7 +375,7 @@ export default function App() {
       <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block z-30`}>
         <Sidebar
           activeTab={activeTab}
-          isCalendarConnected={Boolean(accessToken)}
+          isCalendarConnected={isCalendarGranted}
           onSelectTab={(tab) => {
             setActiveTab(tab);
             setIsMobileMenuOpen(false);
@@ -464,7 +471,7 @@ export default function App() {
               agents={configuredAgents}
               onBackToConfig={() => setActiveTab('config')}
               onOpenScheduleModal={handleOpenScheduleFlow}
-              isCalendarConnected={Boolean(accessToken)}
+              isCalendarConnected={isCalendarGranted}
             />
           )}
 
@@ -476,7 +483,7 @@ export default function App() {
               scheduledEvent={scheduledCalendarEvent}
               onStartNegotiation={() => setActiveTab('negotiation')}
               onOpenScheduleModal={handleOpenScheduleFlow}
-              isCalendarConnected={Boolean(accessToken)}
+              isCalendarConnected={isCalendarGranted}
             />
           )}
         </div>

@@ -49,6 +49,8 @@ export function getGoogleAuthErrorMessage(error: any): string {
 
 const SESSION_USER_KEY = 'parleynet_google_user';
 const SESSION_DEMO_KEY = 'parleynet_demo_session';
+/** Persists that the user previously granted calendar scope — survives page reload. */
+const SESSION_CALENDAR_KEY = 'parleynet_calendar_granted';
 let cachedAccessToken: string | null = null;
 let cachedAccessTokenExpiresAt = 0;
 let cachedIdentityToken: string | null = null;
@@ -147,7 +149,7 @@ async function fetchGoogleProfile(accessToken: string): Promise<CalendarUser> {
  * Initializes auth restoration. Calendar tokens stay in memory only.
  */
 export const initAuth = (
-  onAuthSuccess?: (user: CalendarUser, token: string | null) => void,
+  onAuthSuccess?: (user: CalendarUser, token: string | null, calendarGranted: boolean) => void,
   onAuthFailure?: () => void
 ) => {
   if (!cachedUser) {
@@ -161,10 +163,17 @@ export const initAuth = (
     } catch {
       sessionStorage.removeItem(SESSION_USER_KEY);
       sessionStorage.removeItem(SESSION_DEMO_KEY);
+      sessionStorage.removeItem(SESSION_CALENDAR_KEY);
     }
   }
   if (cachedUser) {
-    onAuthSuccess?.(cachedUser, cachedAccessToken);
+    // Calendar token is memory-only (security), but we track that consent was
+    // previously granted so the UI shows Calendar as connected after a reload.
+    const calendarGranted =
+      cachedAccessToken !== null ||
+      sessionStorage.getItem(SESSION_CALENDAR_KEY) === 'true' ||
+      sessionStorage.getItem(SESSION_DEMO_KEY) === 'true';
+    onAuthSuccess?.(cachedUser, cachedAccessToken, calendarGranted);
   } else {
     onAuthFailure?.();
   }
@@ -262,6 +271,9 @@ export const googleSignIn = async (): Promise<{ user: CalendarUser; accessToken:
     cachedUser = { displayName: 'Google user', email: null, photoURL: null };
   }
   sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(cachedUser));
+  // Mark that the user granted calendar scope — survives page reload so the
+  // sidebar immediately shows Calendar as connected without re-prompting.
+  sessionStorage.setItem(SESSION_CALENDAR_KEY, 'true');
   sessionStorage.removeItem(SESSION_DEMO_KEY);
   return { user: cachedUser, accessToken: result.token };
 };
@@ -302,6 +314,7 @@ export const logout = async (): Promise<void> => {
   cachedUser = null;
   sessionStorage.removeItem(SESSION_USER_KEY);
   sessionStorage.removeItem(SESSION_DEMO_KEY);
+  sessionStorage.removeItem(SESSION_CALENDAR_KEY);
   if (tokens.length && window.google?.accounts?.oauth2) {
     await Promise.all(tokens.map((token) => new Promise<void>((resolve) => {
       try {
