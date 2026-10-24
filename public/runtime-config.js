@@ -1,1 +1,1 @@
-﻿window.__APP_CONFIG__ = { googleClientId: '719647900414-nck1edg98qv58qlffm9p1hul8ftkc5h2.apps.googleusercontent.com' };
+window.__APP_CONFIG__ = { googleClientId: '618144535062-dntd95dhsnsn73e49n18ap6gsp9vst4c.apps.googleusercontent.com' };

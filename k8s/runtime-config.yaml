@@ -1,9 +1,0 @@
-﻿apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: negotiateai-runtime-config
-data:
-  runtime-config.js: |
-    window.__APP_CONFIG__ = {
-      googleClientId: "719647900414-nck1edg98qv58qlffm9p1hul8ftkc5h2.apps.googleusercontent.com"
-    };

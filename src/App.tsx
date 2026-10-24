@@ -24,7 +24,9 @@ import {
   logout,
   CalendarUser,
   getGoogleAuthErrorMessage,
+  getGoogleIdentityToken,
 } from './services/authService.ts';
+import { syncGoogleUser } from './services/apiService';
 import {
   CalendarEventPayload,
   createCalendarEvent,
@@ -43,6 +45,33 @@ import { CalendarConfirmModal } from './components/CalendarConfirmModal.tsx';
 import { CalendarEventListModal } from './components/CalendarEventListModal.tsx';
 import { LoginScreen } from './components/LoginScreen.tsx';
 
+const DEFAULT_JOB_ROLE = 'Software Engineer';
+const DEFAULT_JOB_LEVEL = 'Senior';
+
+const withJobProfile = (scenario: ScenarioTemplate, role: string, level: string): ScenarioTemplate => {
+  if (scenario.id !== 'job-offer') return scenario;
+  const baseScenario = PREBUILT_SCENARIOS.find((item) => item.id === 'job-offer') || scenario;
+  const fullRole = `${level} ${role}`;
+  return {
+    ...baseScenario,
+    detailedContext: baseScenario.detailedContext.replace(/Senior Engineer/g, fullRole),
+    agentRolesText: `${fullRole}, Recruiter`,
+    orchestrator: {
+      ...baseScenario.orchestrator,
+      arbitrationRules: baseScenario.orchestrator.arbitrationRules.map((rule) =>
+        rule.replace('Grade L6 salary band', `${level} ${role} salary band`)
+      ),
+    },
+    defaultAgents: baseScenario.defaultAgents.map((agent) => agent.id === 'candidate-ai-lead'
+      ? {
+          ...agent,
+          roleTitle: fullRole,
+          roleDescription: `Negotiates an offer for a ${fullRole} position, weighing compensation, career growth, benefits, and work flexibility.`,
+        }
+      : agent),
+  };
+};
+
 export default function App() {
   // Scenario & Agents State
   const [selectedScenario, setSelectedScenario] = useState<ScenarioTemplate>(
@@ -51,6 +80,8 @@ export default function App() {
   const [configuredAgents, setConfiguredAgents] = useState<AgentConfig[]>(
     JSON.parse(JSON.stringify(PREBUILT_SCENARIOS[0].defaultAgents))
   );
+  const [jobRole, setJobRole] = useState(DEFAULT_JOB_ROLE);
+  const [jobLevel, setJobLevel] = useState(DEFAULT_JOB_LEVEL);
 
   // Active View Tab
   const [activeTab, setActiveTab] = useState<NavTab>('home');
@@ -68,6 +99,8 @@ export default function App() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isEventListModalOpen, setIsEventListModalOpen] = useState(false);
   const [pendingCalendarEvent, setPendingCalendarEvent] =
+    useState<CalendarEventPayload | null>(null);
+  const [scheduledCalendarEvent, setScheduledCalendarEvent] =
     useState<CalendarEventPayload | null>(null);
   const [isSubmittingCalendar, setIsSubmittingCalendar] = useState(false);
 
@@ -101,9 +134,31 @@ export default function App() {
 
   // Handle Scenario Selection (Dynamic Loading & Mapping)
   const handleSelectScenario = (scenario: ScenarioTemplate) => {
-    setSelectedScenario(scenario);
-    setConfiguredAgents(JSON.parse(JSON.stringify(scenario.defaultAgents)));
+    setScheduledCalendarEvent(null);
+    if (scenario.id === 'job-offer') {
+      setJobRole(DEFAULT_JOB_ROLE);
+      setJobLevel(DEFAULT_JOB_LEVEL);
+    }
+    const nextScenario = scenario.id === 'job-offer'
+      ? withJobProfile(scenario, DEFAULT_JOB_ROLE, DEFAULT_JOB_LEVEL)
+      : scenario;
+    setSelectedScenario(nextScenario);
+    setConfiguredAgents(JSON.parse(JSON.stringify(nextScenario.defaultAgents)));
     showToast('info', `Loaded "${scenario.title}" with ${scenario.defaultAgents.length} agents.`);
+  };
+
+  const handleUpdateJobRole = (role: string, level: string) => {
+    setJobRole(role);
+    setJobLevel(level);
+    const nextScenario = withJobProfile(selectedScenario, role, level);
+    setSelectedScenario(nextScenario);
+    setConfiguredAgents((previous) => previous.map((agent) => agent.id === 'candidate-ai-lead'
+      ? {
+          ...agent,
+          roleTitle: `${level} ${role}`,
+          roleDescription: `Negotiates an offer for a ${level} ${role} position, weighing compensation, career growth, benefits, and work flexibility.`,
+        }
+      : agent));
   };
 
   // Modify personality for an agent
@@ -160,11 +215,23 @@ export default function App() {
     try {
       const result = await googleSignIn();
       if (result) {
+        const identityToken = getGoogleIdentityToken();
+        if (identityToken) {
+          // Sync user profile to the backend DB. This is best-effort — a missing
+          // API server (e.g. local dev without Docker) should not block sign-in.
+          try {
+            await syncGoogleUser(identityToken);
+          } catch (apiErr: any) {
+            console.warn('Could not sync user to backend API (is the server running?):', apiErr?.message);
+          }
+        }
         setUser(result.user);
-        setAccessToken(null);
-        showToast('success', `Signed in as ${result.user.displayName || result.user.email}. Calendar access is requested only when you use calendar features.`);
+        setAccessToken(result.accessToken);
+        showToast('success', `Signed in as ${result.user.displayName || result.user.email}. Google Calendar is connected.`);
       }
     } catch (err: any) {
+      // Do not keep a browser session if Google auth itself fails.
+      await logout();
       console.error(err);
       showToast('error', getGoogleAuthErrorMessage(err));
     } finally {
@@ -188,7 +255,7 @@ export default function App() {
     showToast('info', 'Signed out from Google Calendar.');
   };
 
-  // Open the schedule form immediately; Google sign-in happens on confirm if needed.
+  // Open the schedule form immediately; refresh Calendar access on confirm if needed.
   const handleOpenScheduleFlow = () => {
     setIsEventListModalOpen(false);
     setIsScheduleModalOpen(true);
@@ -236,6 +303,7 @@ export default function App() {
     setIsSubmittingCalendar(true);
     try {
       const createdEvent = await createCalendarEvent(token, pendingCalendarEvent);
+      setScheduledCalendarEvent(pendingCalendarEvent);
       setIsConfirmModalOpen(false);
       setPendingCalendarEvent(null);
       showToast(
@@ -365,6 +433,9 @@ export default function App() {
             <AgentConfigurationScreen
               scenario={selectedScenario}
               agents={configuredAgents}
+              jobRole={jobRole}
+              jobLevel={jobLevel}
+              onUpdateJobRole={handleUpdateJobRole}
               validation={validation}
               onUpdatePersonality={handleUpdatePersonality}
               onUpdateGoal={handleUpdateGoal}
@@ -402,6 +473,7 @@ export default function App() {
             <ReportsScreen
               scenario={selectedScenario}
               agents={configuredAgents}
+              scheduledEvent={scheduledCalendarEvent}
               onStartNegotiation={() => setActiveTab('negotiation')}
               onOpenScheduleModal={handleOpenScheduleFlow}
               isCalendarConnected={Boolean(accessToken)}

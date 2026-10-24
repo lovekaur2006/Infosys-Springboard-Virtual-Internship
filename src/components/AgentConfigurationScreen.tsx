@@ -28,6 +28,9 @@ import { PERSONALITY_DEFINITIONS } from '../data/scenarios.ts';
 interface AgentConfigurationScreenProps {
   scenario: ScenarioTemplate;
   agents: AgentConfig[];
+  jobRole: string;
+  jobLevel: string;
+  onUpdateJobRole: (role: string, level: string) => void;
   validation: ValidationResult;
   onUpdatePersonality: (agentId: string, personality: PersonalityType) => void;
   onUpdateGoal: (agentId: string, goal: string, metric: string) => void;
@@ -40,6 +43,9 @@ interface AgentConfigurationScreenProps {
 export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> = ({
   scenario,
   agents,
+  jobRole,
+  jobLevel,
+  onUpdateJobRole,
   validation,
   onUpdatePersonality,
   onUpdateGoal,
@@ -118,6 +124,44 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
           Set each participant’s priorities and boundaries for <strong className="text-slate-800">{scenario.title}</strong>. These positions guide how the conversation unfolds.
         </p>
       </div>
+
+      {scenario.id === 'job-offer' && (
+        <section className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5 sm:p-6">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-bold text-slate-900">Job offer role profile</h2>
+            <p className="text-xs leading-relaxed text-slate-600">Choose the position and career level. The candidate role and negotiation context update to match.</p>
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Job role
+              <select
+                value={jobRole}
+                onChange={(event) => onUpdateJobRole(event.target.value, jobLevel)}
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800"
+              >
+                {['Software Engineer', 'Data Scientist', 'Product Manager', 'UX/UI Designer', 'Cybersecurity Analyst', 'Marketing Manager', 'Sales Executive', 'HR Specialist', 'Finance Analyst', 'Operations Manager', 'Customer Support Specialist'].map((role) => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-semibold text-slate-700">
+              Career level
+              <select
+                value={jobLevel}
+                onChange={(event) => onUpdateJobRole(jobRole, event.target.value)}
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800"
+              >
+                {['Intern', 'Entry-level', 'Mid-level', 'Senior', 'Lead / Principal', 'Manager', 'Director', 'Vice President', 'Executive / C-suite'].map((level) => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="mt-3 rounded-xl border border-indigo-100 bg-white/80 px-3.5 py-2.5 text-xs text-slate-600">
+            Candidate role: <strong className="text-slate-900">{jobLevel} {jobRole}</strong>
+          </div>
+        </section>
+      )}
 
       {/* Agents side-by-side grid */}
       <div

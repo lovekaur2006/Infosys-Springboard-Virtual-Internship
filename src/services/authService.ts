@@ -22,7 +22,8 @@ export const IDENTITY_SCOPES = [
 ];
 
 export const CALENDAR_SCOPES = [
-  'https://www.googleapis.com/auth/calendar.events',
+  // The app only reads and writes events on the user's primary calendar.
+  'https://www.googleapis.com/auth/calendar.events.owned',
 ];
 
 /** Turns Google OAuth failures into actionable, origin-specific guidance. */
@@ -35,7 +36,7 @@ export function getGoogleAuthErrorMessage(error: any): string {
     return 'Google sign-in was cancelled before Calendar access was granted.';
   }
   if (code === 'auth/access-denied' || code === 'access_denied' || code === 'invalid_request' || code === 'auth/invalid-request') {
-    return `Google rejected the OAuth request from ${window.location.origin}. In Google Cloud Console, open the project that owns this OAuth client and add this exact origin (scheme, hostname, and port) under Google Auth Platform > Clients > Authorized JavaScript origins. For Calendar access, also enable Google Calendar API and configure the calendar.events scope. If the app is in Testing and requests Calendar access, add this account under Audience > Test users. Workspace administrators can also block third-party OAuth apps. Reload after updating the client. Demo access remains available.`;
+    return `Google rejected the OAuth request from ${window.location.origin}. In the Google Cloud project that owns this OAuth client, add this exact origin (scheme, hostname, and port) under Google Auth Platform > Clients > Authorized JavaScript origins. For Calendar access, enable Google Calendar API and allow the https://www.googleapis.com/auth/calendar.events.owned scope in the OAuth consent setup. If the app is in Testing, add this Google account under Audience > Test users. A Workspace administrator may also block third-party OAuth apps. Reload after updating settings. Demo access remains available.`;
   }
   if (code === 'auth/unauthorized-domain') {
     return `This site (${window.location.hostname}) is not authorized by the identity provider. Add this origin to the Google OAuth client's Authorized JavaScript origins.`;
@@ -248,11 +249,13 @@ async function requestGoogleToken(scopes: string[]): Promise<{ token: string; ex
   });
 }
 
-/** Signs into the workspace using identity scopes only. Calendar access is requested separately when used. */
-export const googleSignIn = async (): Promise<{ user: CalendarUser } | null> => {
-  const result = await requestGoogleToken(IDENTITY_SCOPES);
+/** Signs in and connects Google Calendar in the same consent flow. */
+export const googleSignIn = async (): Promise<{ user: CalendarUser; accessToken: string } | null> => {
+  const result = await requestGoogleToken([...IDENTITY_SCOPES, ...CALENDAR_SCOPES]);
   if (!result) return null;
   cachedIdentityToken = result.token;
+  cachedAccessToken = result.token;
+  cachedAccessTokenExpiresAt = Date.now() + Math.max(0, result.expiresIn - 60) * 1000;
   try {
     cachedUser = await fetchGoogleProfile(result.token);
   } catch {
@@ -260,8 +263,11 @@ export const googleSignIn = async (): Promise<{ user: CalendarUser } | null> => 
   }
   sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(cachedUser));
   sessionStorage.removeItem(SESSION_DEMO_KEY);
-  return { user: cachedUser };
+  return { user: cachedUser, accessToken: result.token };
 };
+
+/** Returns the short-lived Google identity token for server-side verification. */
+export const getGoogleIdentityToken = (): string | null => cachedIdentityToken;
 
 /** Requests calendar access only when the user opens or schedules a calendar event. */
 export const googleCalendarSignIn = async (): Promise<{ user: CalendarUser; accessToken: string } | null> => {

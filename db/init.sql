@@ -1,4 +1,13 @@
 -- Database schema for NegotiateAI (PostgreSQL 13+)
+CREATE TABLE IF NOT EXISTS users (
+  email           TEXT PRIMARY KEY,
+  display_name    TEXT,
+  photo_url       TEXT,
+  provider        TEXT NOT NULL DEFAULT 'google',
+  last_login_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS negotiations (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_email      TEXT        NOT NULL,

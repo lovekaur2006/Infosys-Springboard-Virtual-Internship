@@ -16,6 +16,37 @@ app.get('/api/ready', async (_req: any, res: any) => {
   }
 });
 
+// Validate the user's Google access token and persist their profile on login.
+app.post('/api/auth/google', async (req: any, res: any) => {
+  const authorization = String(req.headers.authorization || '');
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (!match) return res.status(401).json({ error: 'Google access token is required' });
+  try {
+    const profileResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${match[1]}` },
+    });
+    if (!profileResponse.ok) return res.status(401).json({ error: 'Google access token is invalid or expired' });
+    const profile = await profileResponse.json() as { email?: string; name?: string; picture?: string; email_verified?: boolean };
+    if (!profile.email || profile.email_verified === false) {
+      return res.status(401).json({ error: 'Google did not provide a verified email address' });
+    }
+    const { rows } = await pool.query(
+      `INSERT INTO users (email, display_name, photo_url, provider, last_login_at)
+       VALUES ($1, $2, $3, 'google', now())
+       ON CONFLICT (email) DO UPDATE SET
+         display_name = EXCLUDED.display_name,
+         photo_url = EXCLUDED.photo_url,
+         last_login_at = now()
+       RETURNING email, display_name AS "displayName", photo_url AS "photoURL", created_at, last_login_at`,
+      [profile.email.toLowerCase(), profile.name || null, profile.picture || null]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Failed to sync Google user', err);
+    res.status(500).json({ error: 'Failed to save user profile' });
+  }
+});
+
 // Save a finished negotiation
 app.post('/api/negotiations', async (req: any, res: any) => {
   const { userEmail, scenarioId, scenarioTitle, agents, turns, settlement } = req.body ?? {};
