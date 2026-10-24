@@ -33,7 +33,7 @@ export function getGoogleAuthErrorMessage(error: any): string {
     return 'Google sign-in popup was blocked. Allow popups for this site, then try again.';
   }
   if (code === 'auth/popup-closed-by-user' || code === 'popup_closed') {
-    return 'Google sign-in was cancelled before Calendar access was granted.';
+    return `Google sign-in popup closed unexpectedly. This usually means the origin "${window.location.origin}" is not listed under Authorized JavaScript origins in your Google Cloud OAuth client. Go to Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Client ID, and add "${window.location.origin}" to Authorized JavaScript origins. Then reload and try again.`;
   }
   if (code === 'auth/access-denied' || code === 'access_denied' || code === 'invalid_request' || code === 'auth/invalid-request') {
     return `Google rejected the OAuth request from ${window.location.origin}. In the Google Cloud project that owns this OAuth client, add this exact origin (scheme, hostname, and port) under Google Auth Platform > Clients > Authorized JavaScript origins. For Calendar access, enable Google Calendar API and allow the https://www.googleapis.com/auth/calendar.events.owned scope in the OAuth consent setup. If the app is in Testing, add this Google account under Audience > Test users. A Workspace administrator may also block third-party OAuth apps. Reload after updating settings. Demo access remains available.`;
