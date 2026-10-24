@@ -25,6 +25,7 @@ import {
   CalendarUser,
   getGoogleAuthErrorMessage,
   getGoogleIdentityToken,
+  SESSION_CALENDAR_KEY,
 } from './services/authService.ts';
 import { syncGoogleUser } from './services/apiService';
 import {
@@ -230,8 +231,12 @@ export default function App() {
         }
         setUser(result.user);
         setAccessToken(result.accessToken);
-        setIsCalendarGranted(true); // Calendar scope granted alongside Google sign-in
-        showToast('success', `Signed in as ${result.user.displayName || result.user.email}. Google Calendar is connected.`);
+        setIsCalendarGranted(result.calendarGranted);
+        if (result.calendarGranted) {
+          showToast('success', `Signed in as ${result.user.displayName || result.user.email}. Google Calendar is connected.`);
+        } else {
+          showToast('info', `Signed in as ${result.user.displayName || result.user.email}. Google Calendar access was not granted.`);
+        }
       }
     } catch (err: any) {
       // Do not keep a browser session if Google auth itself fails.
@@ -274,9 +279,17 @@ export default function App() {
       if (result) {
         setUser(result.user);
         setAccessToken(result.accessToken);
-        setIsCalendarGranted(true);
-        showToast('success', `Signed in as ${result.user.displayName || result.user.email}`);
-        return result.accessToken;
+        if (result.calendarGranted) {
+          setIsCalendarGranted(true);
+          sessionStorage.setItem(SESSION_CALENDAR_KEY, 'true');
+          showToast('success', `Signed in as ${result.user.displayName || result.user.email}`);
+          return result.accessToken;
+        } else {
+          setIsCalendarGranted(false);
+          sessionStorage.removeItem(SESSION_CALENDAR_KEY);
+          showToast('info', 'Google Calendar permission was not granted.');
+          return null;
+        }
       }
       return null;
     } catch (err: any) {

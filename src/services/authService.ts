@@ -50,7 +50,7 @@ export function getGoogleAuthErrorMessage(error: any): string {
 const SESSION_USER_KEY = 'parleynet_google_user';
 const SESSION_DEMO_KEY = 'parleynet_demo_session';
 /** Persists that the user previously granted calendar scope — survives page reload. */
-const SESSION_CALENDAR_KEY = 'parleynet_calendar_granted';
+export const SESSION_CALENDAR_KEY = 'parleynet_calendar_granted';
 let cachedAccessToken: string | null = null;
 let cachedAccessTokenExpiresAt = 0;
 let cachedIdentityToken: string | null = null;
@@ -69,11 +69,14 @@ declare global {
             callback: (resp: {
               access_token?: string;
               expires_in?: number;
+              scope?: string;
               error?: string;
               error_description?: string;
             }) => void;
             error_callback?: (err: { type?: string; message?: string }) => void;
           }) => { requestAccessToken: (opts?: { prompt?: string }) => void };
+          hasGrantedAllScopes?: (tokenResponse: any, ...scopes: string[]) => boolean;
+          hasGrantedAnyScope?: (tokenResponse: any, ...scopes: string[]) => boolean;
           revoke: (token: string, done?: () => void) => void;
         };
       };
@@ -170,7 +173,6 @@ export const initAuth = (
     // Calendar token is memory-only (security), but we track that consent was
     // previously granted so the UI shows Calendar as connected after a reload.
     const calendarGranted =
-      cachedAccessToken !== null ||
       sessionStorage.getItem(SESSION_CALENDAR_KEY) === 'true' ||
       sessionStorage.getItem(SESSION_DEMO_KEY) === 'true';
     onAuthSuccess?.(cachedUser, cachedAccessToken, calendarGranted);
@@ -183,7 +185,7 @@ export const initAuth = (
 /**
  * Signs in using demo mode for local evaluation without external Google credentials.
  */
-export const demoSignIn = (): { user: CalendarUser; accessToken: string } => {
+export const demoSignIn = (): { user: CalendarUser; accessToken: string; calendarGranted: boolean } => {
   const demoUser: CalendarUser = {
     displayName: 'Demo User (Internship Evaluation)',
     email: 'evaluator@infosys-springboard.org',
@@ -194,13 +196,16 @@ export const demoSignIn = (): { user: CalendarUser; accessToken: string } => {
   cachedUser = demoUser;
   sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(demoUser));
   sessionStorage.setItem(SESSION_DEMO_KEY, 'true');
-  return { user: demoUser, accessToken: 'demo_token' };
+  sessionStorage.setItem(SESSION_CALENDAR_KEY, 'true');
+  return { user: demoUser, accessToken: 'demo_token', calendarGranted: true };
 };
 
 /**
  * Signs in with Google Identity Services (Calendar scope).
  */
-async function requestGoogleToken(scopes: string[]): Promise<{ token: string; expiresIn: number } | null> {
+async function requestGoogleToken(
+  scopes: string[]
+): Promise<{ token: string; expiresIn: number; grantedScopes: string[]; calendarGranted: boolean } | null> {
   const envClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
   const configuredClientId = window.__APP_CONFIG__?.googleClientId || envClientId;
   const clientId = configuredClientId?.trim();
@@ -236,7 +241,23 @@ async function requestGoogleToken(scopes: string[]): Promise<{ token: string; ex
           return;
         }
 
-        resolve({ token: response.access_token, expiresIn: response.expires_in || 3600 });
+        const grantedScopes = (response.scope ? response.scope.split(' ') : []).filter(Boolean);
+        const calendarGranted =
+          CALENDAR_SCOPES.every((scope) => grantedScopes.includes(scope)) ||
+          Boolean(window.google?.accounts?.oauth2?.hasGrantedAllScopes?.(response, ...CALENDAR_SCOPES));
+
+        if (calendarGranted) {
+          sessionStorage.setItem(SESSION_CALENDAR_KEY, 'true');
+        } else {
+          sessionStorage.removeItem(SESSION_CALENDAR_KEY);
+        }
+
+        resolve({
+          token: response.access_token,
+          expiresIn: response.expires_in || 3600,
+          grantedScopes,
+          calendarGranted,
+        });
       },
       error_callback: (err) => {
         const message = err?.message || err?.type || 'Google sign-in failed';
@@ -259,7 +280,7 @@ async function requestGoogleToken(scopes: string[]): Promise<{ token: string; ex
 }
 
 /** Signs in and connects Google Calendar in the same consent flow. */
-export const googleSignIn = async (): Promise<{ user: CalendarUser; accessToken: string } | null> => {
+export const googleSignIn = async (): Promise<{ user: CalendarUser; accessToken: string; calendarGranted: boolean } | null> => {
   const result = await requestGoogleToken([...IDENTITY_SCOPES, ...CALENDAR_SCOPES]);
   if (!result) return null;
   cachedIdentityToken = result.token;
@@ -271,19 +292,23 @@ export const googleSignIn = async (): Promise<{ user: CalendarUser; accessToken:
     cachedUser = { displayName: 'Google user', email: null, photoURL: null };
   }
   sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(cachedUser));
-  // Mark that the user granted calendar scope — survives page reload so the
-  // sidebar immediately shows Calendar as connected without re-prompting.
-  sessionStorage.setItem(SESSION_CALENDAR_KEY, 'true');
   sessionStorage.removeItem(SESSION_DEMO_KEY);
-  return { user: cachedUser, accessToken: result.token };
+  return { user: cachedUser, accessToken: result.token, calendarGranted: result.calendarGranted };
 };
 
 /** Returns the short-lived Google identity token for server-side verification. */
 export const getGoogleIdentityToken = (): string | null => cachedIdentityToken;
 
 /** Requests calendar access only when the user opens or schedules a calendar event. */
-export const googleCalendarSignIn = async (): Promise<{ user: CalendarUser; accessToken: string } | null> => {
-  if (cachedAccessToken && cachedAccessTokenExpiresAt > Date.now() + 60_000) return { user: cachedUser || { displayName: null, email: null, photoURL: null }, accessToken: cachedAccessToken };
+export const googleCalendarSignIn = async (): Promise<{ user: CalendarUser; accessToken: string; calendarGranted: boolean } | null> => {
+  if (cachedAccessToken && cachedAccessTokenExpiresAt > Date.now() + 60_000) {
+    const calendarGranted = sessionStorage.getItem(SESSION_CALENDAR_KEY) === 'true';
+    return {
+      user: cachedUser || { displayName: null, email: null, photoURL: null },
+      accessToken: cachedAccessToken,
+      calendarGranted,
+    };
+  }
   const result = await requestGoogleToken(CALENDAR_SCOPES);
   if (!result) return null;
   cachedAccessToken = result.token;
@@ -296,7 +321,10 @@ export const googleCalendarSignIn = async (): Promise<{ user: CalendarUser; acce
     }
     sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(cachedUser));
   }
-  return { user: cachedUser, accessToken: result.token };
+  if (result.calendarGranted) {
+    sessionStorage.setItem(SESSION_CALENDAR_KEY, 'true');
+  }
+  return { user: cachedUser, accessToken: result.token, calendarGranted: result.calendarGranted };
 };
 
 export const getAccessToken = async (): Promise<string | null> => cachedAccessToken;
