@@ -108,9 +108,16 @@ export function advanceAutonomousNegotiation(
 
   const agent = agents[nextAgentIndex];
   const incoming = incomingOfferFor(scenario, agent, turns, previous);
-  const evaluation = evaluateCounteroffer(agent, incoming);
-  const accepted = roleAcceptsOffer(scenario, agent, round, turns, incoming);
-  const rejected = !accepted && round >= scenario.orchestrator.maxRounds;
+  const evaluation = evaluateCounteroffer(agent, incoming, {
+    round,
+    maxRounds: scenario.orchestrator.maxRounds,
+    turns,
+    scenarioId: scenario.id,
+  });
+  const accepted = scenario.id === 'budget-allocation'
+    ? agent.id === 'cfo-finance' && (roleAcceptsOffer(scenario, agent, round, turns, incoming) || evaluation.decision === 'accept')
+    : roleAcceptsOffer(scenario, agent, round, turns, incoming) || evaluation.decision === 'accept';
+  const rejected = !accepted && (evaluation.decision === 'reject' || round >= scenario.orchestrator.maxRounds);
   const generated = generateTurnDialogue(scenario, agents, round, nextAgentIndex, turns);
   const decision: NonNullable<NegotiationTurn['decision']> = accepted ? 'accept' : rejected ? 'reject' : 'counter';
 
@@ -129,10 +136,10 @@ export function advanceAutonomousNegotiation(
     speechText,
     decision,
     decisionRationale: accepted
-      ? `Accepted after checking this role’s offer boundaries (evaluation signal ${evaluation.score}/100).`
+      ? (evaluation.decisionRationale || `Accepted after checking this role’s offer boundaries (evaluation signal ${evaluation.score}/100).`)
       : rejected
-        ? `Rejected at the round limit because the final offer did not satisfy the role’s boundaries (evaluation signal ${evaluation.score}/100).`
-        : `Countered after checking ${agent.name}’s boundaries (evaluation signal ${evaluation.score}/100).`,
+        ? (evaluation.decisionRationale || `Rejected at the round limit because the final offer did not satisfy the role’s boundaries (evaluation signal ${evaluation.score}/100).`)
+        : (evaluation.decisionRationale || `Countered after checking ${agent.name}’s boundaries (evaluation signal ${evaluation.score}/100).`),
     evaluationScore: evaluation.score,
     respondingToTurnId: previous.id,
     concessionNote: generated.concessionNote || (round > 1 ? `Revised position in response to ${incoming.agentName}; offer boundaries checked before moving.` : 'Opening position; no concession made yet.'),

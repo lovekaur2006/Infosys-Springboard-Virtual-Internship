@@ -15,6 +15,7 @@ import {
   Calendar,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   TrendingUp,
   MessageSquare,
   Award,
@@ -30,6 +31,10 @@ import {
   Lightbulb,
   Check,
   FileCheck2,
+  Target,
+  RefreshCw,
+  XCircle,
+  Scale,
 } from 'lucide-react';
 import {
   AgentConfig,
@@ -83,15 +88,54 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   const [customDurationTerm, setCustomDurationTerm] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
 
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrolledUp = useRef(false);
+  const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
+
   const userAgent = agents[userAgentIdx] || agents[0];
   const aiAgent = agents[userAgentIdx === 0 ? 1 : 0] || agents[0];
   const analysisAgent = agents.find((agent) => agent.id === analysisAgentId) || userAgent;
   const latestIncomingOffer = [...turns].reverse().find(
     (turn) => turn.agentId !== analysisAgent.id && turn.offeredTerms?.length
   );
-  const offerEvaluation = evaluateCounteroffer(analysisAgent, latestIncomingOffer);
+  const offerEvaluation = evaluateCounteroffer(analysisAgent, latestIncomingOffer, {
+    round: currentRound,
+    maxRounds: scenario.orchestrator.maxRounds,
+    turns,
+    scenarioId: scenario.id,
+  });
   const roleConcessions = getRoleConcessionHistory(analysisAgent, turns);
+
+  const handleApplySuggestedTerms = () => {
+    if (!offerEvaluation.concessionRecommendation) return;
+    const rec = offerEvaluation.concessionRecommendation;
+    setUserInputText(rec.concessionNote || 'We propose a structured counteroffer.');
+    const priceTerm = rec.suggestedTerms.find((t) => /price|salary|budget|comp/i.test(t.label));
+    const durationTerm = rec.suggestedTerms.find((t) => /term|duration|warranty|support|sla|remote/i.test(t.label));
+    if (priceTerm) setCustomPriceTerm(priceTerm.value);
+    if (durationTerm) setCustomDurationTerm(`${durationTerm.label}: ${durationTerm.value}`);
+  };
+
+  // Dedicated container scroll function that NEVER scrolls window/page
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior,
+    });
+    setShowScrollBottomBtn(false);
+    isUserScrolledUp.current = false;
+  };
+
+  const handleChatScroll = () => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const scrolledUp = distanceToBottom > 80;
+    isUserScrolledUp.current = scrolledUp;
+    setShowScrollBottomBtn(scrolledUp);
+  };
 
   // Initialize opening turn when mounted
   useEffect(() => {
@@ -114,9 +158,14 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     });
   }, [settlement]);
 
-  // Auto-scroll transcript on new turn
+  // Auto-scroll inside chat dialogue container ONLY (does NOT scroll or lock the outer page)
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!isUserScrolledUp.current) {
+      const timer = setTimeout(() => {
+        scrollToBottom('smooth');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [turns, isAiThinking]);
 
   // Autonomous turn advance (AI vs AI mode)
@@ -402,7 +451,11 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
             </div>
 
             {/* Scrollable Dialogue Stream */}
-            <div className="flex-1 p-5 overflow-y-auto space-y-4">
+            <div
+              ref={chatContainerRef}
+              onScroll={handleChatScroll}
+              className="flex-1 min-h-0 p-5 overflow-y-auto space-y-4 relative overscroll-contain"
+            >
               {/* Orchestrator Kickoff Notice */}
               <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs space-y-1">
                 <div className="flex items-center gap-2 font-bold text-indigo-950">
@@ -520,7 +573,19 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
                 </div>
               )}
 
-              <div ref={transcriptEndRef} />
+              {/* Floating Jump to Latest Button */}
+              {showScrollBottomBtn && (
+                <div className="sticky bottom-2 left-0 right-0 flex justify-center pointer-events-none z-20">
+                  <button
+                    type="button"
+                    onClick={() => scrollToBottom('smooth')}
+                    className="pointer-events-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 text-white text-[11px] font-bold shadow-lg hover:bg-slate-800 transition-all border border-slate-700/50 backdrop-blur-xs animate-in fade-in slide-in-from-bottom-2"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Jump to latest</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Bottom Section: Interactive User Input Console OR Settlement Bar */}
@@ -688,10 +753,10 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
           <section className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-xs" aria-label="Counteroffer evaluation and concessions">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600">Role Intelligence</div>
-                <h3 className="mt-1 text-sm font-extrabold text-slate-900">Counteroffer desk</h3>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600">Module Intelligence</div>
+                <h3 className="mt-1 text-sm font-extrabold text-slate-900">Counteroffer & Concession Desk</h3>
               </div>
-              <TrendingUp className="h-4 w-4 text-indigo-600" />
+              <Scale className="h-4 w-4 text-indigo-600" />
             </div>
 
             <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Evaluate role">
@@ -709,55 +774,211 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
               ))}
             </div>
 
-            <div className="mt-4 rounded-2xl bg-slate-50 p-3.5">
+            {/* Decision Banner */}
+            <div className="mt-4 rounded-2xl border p-3.5 transition-all duration-200">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Agent Decision</span>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-xs ${
+                    offerEvaluation.decision === 'accept'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : offerEvaluation.decision === 'reject'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                      : 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                  }`}
+                >
+                  {offerEvaluation.decision === 'accept' ? (
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                  ) : offerEvaluation.decision === 'reject' ? (
+                    <XCircle className="h-3 w-3 text-rose-600" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 text-indigo-600 animate-spin-reverse" />
+                  )}
+                  {offerEvaluation.decision === 'accept'
+                    ? 'Accept Offer'
+                    : offerEvaluation.decision === 'reject'
+                    ? 'Reject Offer'
+                    : 'Counter Offer'}
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-700 bg-slate-50/80 rounded-xl p-2.5 border border-slate-100 font-medium">
+                {offerEvaluation.decisionRationale}
+              </p>
+
+              {/* Dual Pillar Scores */}
+              <div className="mt-3 grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                <div className="rounded-xl bg-slate-50 p-2 text-center border border-slate-100">
+                  <div className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Objectives Fit</div>
+                  <div className="mt-0.5 text-base font-black text-indigo-700">{offerEvaluation.objectiveScore}%</div>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-2 text-center border border-slate-100">
+                  <div className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Constraint Safety</div>
+                  <div className={`mt-0.5 text-base font-black ${offerEvaluation.constraintScore >= 75 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {offerEvaluation.constraintScore}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Latest Incoming Offer Context */}
+            <div className="mt-3 rounded-2xl bg-slate-50 p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Latest incoming offer</div>
-                  <div className="mt-1 text-xs font-bold text-slate-800">{latestIncomingOffer ? `${latestIncomingOffer.agentName} · Round ${latestIncomingOffer.round}` : 'Waiting for a counteroffer'}</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Evaluated Offer</div>
+                  <div className="mt-0.5 text-xs font-bold text-slate-800">
+                    {latestIncomingOffer ? `${latestIncomingOffer.agentName} · Round ${latestIncomingOffer.round}` : 'Waiting for an offer'}
+                  </div>
                 </div>
-                {latestIncomingOffer && <div className={`text-right ${offerEvaluation.score >= 75 ? 'text-emerald-700' : offerEvaluation.score >= 50 ? 'text-amber-700' : 'text-rose-700'}`}>
-                  <div className="text-lg font-black leading-none">{offerEvaluation.score}<span className="text-[10px]">/100</span></div>
-                  <div className="mt-1 text-[9px] font-bold uppercase tracking-wide">{offerEvaluation.label}</div>
-                </div>}
+                {latestIncomingOffer && (
+                  <div className="text-right">
+                    <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
+                      {offerEvaluation.label}
+                    </span>
+                  </div>
+                )}
               </div>
               <p className="mt-2 text-[11px] leading-5 text-slate-600">{offerEvaluation.summary}</p>
-              {latestIncomingOffer?.offeredTerms?.length ? <div className="mt-2 flex flex-wrap gap-1.5">
-                {latestIncomingOffer.offeredTerms.map((term, index) => <span key={`${term.label}-${index}`} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600"><strong className="text-slate-800">{term.label}:</strong> {term.value}</span>)}
-              </div> : null}
+              {latestIncomingOffer?.offeredTerms?.length ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {latestIncomingOffer.offeredTerms.map((term, index) => (
+                    <span key={`${term.label}-${index}`} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600">
+                      <strong className="text-slate-800">{term.label}:</strong> {term.value}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
-            <div className="mt-4">
+            {/* Objectives Analysis Breakdown */}
+            <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between text-[10px]">
-                <span className="font-bold uppercase tracking-wide text-slate-500">Role target</span>
+                <span className="font-bold uppercase tracking-wide text-slate-500">Objectives Evaluation</span>
                 <span className="font-semibold text-indigo-700">{analysisAgent.targetMetric}</span>
               </div>
-              <p className="mt-1 text-[10px] leading-4 text-slate-500">{analysisAgent.primaryGoal}</p>
-            </div>
-
-            <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Boundary check</div>
-              {offerEvaluation.signals.map((signal, index) => (
-                <div key={`${signal.constraint}-${index}`} className="flex items-start gap-2 text-[10px] leading-4">
-                  {signal.state === 'met' ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" /> : signal.state === 'at-risk' ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" /> : <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />}
-                  <span className="text-slate-600"><strong className="text-slate-800">{signal.constraint}</strong><span className="block text-slate-500">{signal.detail}</span></span>
+              {offerEvaluation.objectiveSignals.map((signal, index) => (
+                <div key={`${signal.objective}-${index}`} className="rounded-xl bg-slate-50/60 p-2.5 border border-slate-100 text-[10px]">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-800 flex items-center gap-1">
+                      <Target className="h-3 w-3 text-indigo-600" />
+                      {signal.objective}
+                    </span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-bold ${
+                        signal.status === 'satisfied'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : signal.status === 'acceptable'
+                          ? 'bg-indigo-100 text-indigo-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {signal.status} ({signal.score}%)
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[10px] leading-4 text-slate-500">{signal.detail}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-indigo-700">Suggested next move</div>
-              <p className="mt-1 text-[11px] leading-5 text-indigo-950">{offerEvaluation.nextMove}</p>
+            {/* Boundary Constraints Verification */}
+            <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Boundary & Walkaway Verification</div>
+              {offerEvaluation.signals.map((signal, index) => (
+                <div key={`${signal.constraint}-${index}`} className="flex items-start gap-2 text-[10px] leading-4">
+                  {signal.state === 'met' ? (
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  ) : signal.state === 'at-risk' ? (
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                  ) : (
+                    <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-600" />
+                  )}
+                  <span className="text-slate-600">
+                    <strong className="text-slate-800">{signal.constraint}</strong>
+                    <span className="block text-slate-500">{signal.detail}</span>
+                  </span>
+                </div>
+              ))}
             </div>
 
+            {/* Concession Recommendation & Proposed Terms */}
+            {offerEvaluation.concessionRecommendation && (
+              <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-3.5">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-bold uppercase tracking-wide text-indigo-800">Concession Strategy</span>
+                  <span className="rounded-full bg-indigo-200/70 px-2 py-0.5 font-extrabold text-indigo-900 text-[9px]">
+                    Step: {offerEvaluation.concessionRecommendation.recommendedConcessionPercent}%
+                  </span>
+                </div>
+                <div className="mt-1 text-xs font-bold text-indigo-950">
+                  {offerEvaluation.concessionRecommendation.tactic}
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-indigo-900">
+                  {offerEvaluation.concessionRecommendation.tradeOffAdvice}
+                </p>
+
+                {offerEvaluation.concessionRecommendation.suggestedTerms.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-indigo-200/50">
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-indigo-800">Suggested Counter Terms</div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {offerEvaluation.concessionRecommendation.suggestedTerms.map((t, idx) => (
+                        <span key={idx} className="rounded-md bg-white/90 border border-indigo-200 px-2 py-0.5 text-[9px] text-indigo-950">
+                          <strong>{t.label}:</strong> {t.value}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {mode === 'interactive' && userAgent.id === analysisAgent.id && (
+                  <button
+                    type="button"
+                    onClick={handleApplySuggestedTerms}
+                    className="mt-3 w-full py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Apply Suggested Counteroffer to Input</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Concession Velocity & History */}
             <div className="mt-4 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Concession history</div>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600">{roleConcessions.length} moves</span>
+                <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Concession Velocity</div>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600">
+                  {roleConcessions.length} moves
+                </span>
               </div>
-              {roleConcessions.length ? <ol className="mt-2 space-y-2">
-                {roleConcessions.slice(-3).reverse().map((item, index) => <li key={`${item.round}-${index}`} className="border-l-2 border-indigo-200 pl-2.5 text-[10px] leading-4 text-slate-600"><strong className="text-slate-800">Round {item.round}:</strong> {item.note}{item.terms.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{item.terms.map((term, termIndex) => <span key={`${term.label}-${termIndex}`} className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px]">{term.label}: {term.value}</span>)}</div>}</li>)}
-              </ol> : <p className="mt-2 text-[10px] leading-4 text-slate-500">No explicit concessions recorded for this role yet. Offers from this role will appear here as the discussion progresses.</p>}
-              <p className="mt-2 text-[9px] leading-4 text-slate-400">Evaluation compares the stated offer terms with this role’s configured boundaries. Confirm ambiguous terms before accepting.</p>
+              {roleConcessions.length ? (
+                <ol className="mt-2 space-y-2">
+                  {roleConcessions.slice(-3).reverse().map((item, index) => (
+                    <li key={`${item.round}-${index}`} className="border-l-2 border-indigo-200 pl-2.5 text-[10px] leading-4 text-slate-600">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-slate-800">Round {item.round}:</strong>
+                        {item.deltaFromPrevious !== null && item.deltaFromPrevious !== undefined && item.deltaFromPrevious !== 0 && (
+                          <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded">
+                            Δ ₹{Math.abs(item.deltaFromPrevious).toLocaleString('en-IN')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5">{item.note}</p>
+                      {item.terms.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {item.terms.map((term, termIndex) => (
+                            <span key={`${term.label}-${termIndex}`} className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px]">
+                              {term.label}: {term.value}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-2 text-[10px] leading-4 text-slate-500">
+                  No concessions recorded for this role yet. Proposals from this role will appear here as negotiation advances.
+                </p>
+              )}
             </div>
           </section>
 
