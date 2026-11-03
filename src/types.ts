@@ -41,6 +41,32 @@ export interface OrchestratorConfig {
   description: string;
   arbitrationRules: string[];
   maxRounds: number;
+  deadlockConfig?: Partial<DeadlockConfig>;
+}
+
+export interface DeadlockConfig {
+  /** Number of unchanged proposals before the mediator intervenes. */
+  unchangedOfferLimit: number;
+  /** Number of similar rejected proposals before the mediator intervenes. */
+  repeatedRejectionLimit: number;
+  /** Number of times a role may return to an earlier position. */
+  repeatedPositionLimit: number;
+}
+
+export type DeadlockReason =
+  | 'no_meaningful_offer_change'
+  | 'repeated_rejection'
+  | 'repeated_position'
+  | 'maximum_rounds_reached';
+
+export type DeadlockResolution = 'none' | 'compromise_proposal' | 'modify_stance' | 'final_round' | 'breakdown';
+
+export interface DeadlockStatus {
+  isDeadlocked: boolean;
+  reasons: DeadlockReason[];
+  reasonText: string;
+  resolution: DeadlockResolution;
+  resolutionAttempts: number;
 }
 
 export interface ScenarioTemplate {

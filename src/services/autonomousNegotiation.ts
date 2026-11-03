@@ -1,11 +1,26 @@
-import { AgentConfig, NegotiationTurn, ScenarioTemplate, SettlementSummary } from '../types.ts';
+import { AgentConfig, DeadlockStatus, NegotiationTurn, ScenarioTemplate, SettlementSummary } from '../types.ts';
 import { evaluateCounteroffer } from './counterofferEvaluation.ts';
 import { generateSettlementSummary, generateTurnDialogue } from './negotiationEngine.ts';
+import { buildResolutionTurn, detectDeadlock } from './deadlockDetector.ts';
 
 export interface AutonomousStep {
   turn: NegotiationTurn | null;
   round: number;
   outcome: SettlementSummary | null;
+  deadlock: DeadlockStatus;
+}
+
+const deadlockFor = (scenario: ScenarioTemplate, turns: NegotiationTurn[], round: number) =>
+  detectDeadlock(turns, round, scenario.orchestrator.maxRounds, scenario.orchestrator.deadlockConfig);
+
+function buildDeadlockResolutionTurn(
+  scenario: ScenarioTemplate,
+  turns: NegotiationTurn[],
+  round: number,
+  status: DeadlockStatus
+): NegotiationTurn {
+  const agentIds = scenario.defaultAgents.map((a) => a.id);
+  return buildResolutionTurn(scenario.orchestrator.name, status, turns, agentIds, round);
 }
 
 const numericValues = (terms: NegotiationTurn['offeredTerms']) =>
@@ -93,18 +108,23 @@ export function advanceAutonomousNegotiation(
   turns: NegotiationTurn[],
   currentRound: number
 ): AutonomousStep {
-  if (agents.length === 0) return { turn: null, round: currentRound, outcome: buildImpasse(scenario, agents, turns) };
+  if (agents.length === 0) return { turn: null, round: currentRound, outcome: buildImpasse(scenario, agents, turns), deadlock: deadlockFor(scenario, turns, currentRound) };
 
   if (turns.length === 0) {
     const opening = generateTurnDialogue(scenario, agents, 1, 0, []);
-    return { turn: { ...opening, decision: 'opening', decisionRationale: `${agents[0].roleTitle} opens the negotiation.` }, round: 1, outcome: null };
+    const openingTurn = { ...opening, decision: 'opening' as const, decisionRationale: `${agents[0].roleTitle} opens the negotiation.` };
+    return { turn: openingTurn, round: 1, outcome: null, deadlock: deadlockFor(scenario, [openingTurn], 1) };
   }
 
   const previous = turns[turns.length - 1];
-  const previousAgentIndex = Math.max(0, agents.findIndex((agent) => agent.id === previous.agentId));
+  const previousParticipantTurn = [...turns].reverse().find((turn) => turn.agentId !== 'orchestrator-mediator') || previous;
+  const previousAgentIndex = Math.max(0, agents.findIndex((agent) => agent.id === previousParticipantTurn.agentId));
   const nextAgentIndex = (previousAgentIndex + 1) % agents.length;
   const round = nextAgentIndex === 0 ? currentRound + 1 : currentRound;
-  if (round > scenario.orchestrator.maxRounds) return { turn: null, round: currentRound, outcome: buildImpasse(scenario, agents, turns) };
+  if (round > scenario.orchestrator.maxRounds) {
+    const deadlock = { ...deadlockFor(scenario, turns, currentRound), isDeadlocked: true, resolution: 'breakdown' as const };
+    return { turn: null, round: currentRound, outcome: buildImpasse(scenario, agents, turns), deadlock };
+  }
 
   const agent = agents[nextAgentIndex];
   const incoming = incomingOfferFor(scenario, agent, turns, previous);
@@ -146,8 +166,19 @@ export function advanceAutonomousNegotiation(
     offeredTerms: rejected ? undefined : generated.offeredTerms,
   };
   const nextTurns = [...turns, turn];
-  const outcome = accepted ? generateSettlementSummary(scenario, agents) : rejected ? buildImpasse(scenario, agents, nextTurns) : null;
-  return { turn, round, outcome };
+  const detected = deadlockFor(scenario, nextTurns, round);
+  if (accepted) return { turn, round, outcome: generateSettlementSummary(scenario, agents), deadlock: detected };
+  if (rejected) {
+    return { turn, round, outcome: buildImpasse(scenario, agents, nextTurns), deadlock: { ...detected, isDeadlocked: true, resolution: 'breakdown' } };
+  }
+  if (detected.isDeadlocked) {
+    if (detected.resolution === 'breakdown') {
+      return { turn, round, outcome: buildImpasse(scenario, agents, nextTurns), deadlock: detected };
+    }
+    const intervention = buildDeadlockResolutionTurn(scenario, turns, round, detected);
+    return { turn: intervention, round, outcome: null, deadlock: detected };
+  }
+  return { turn, round, outcome: null, deadlock: detected };
 }
 
 export function simulateAutonomousNegotiation(scenario: ScenarioTemplate, agents: AgentConfig[]) {

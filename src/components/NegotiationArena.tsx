@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import {
   AgentConfig,
+  DeadlockStatus,
   NegotiationTurn,
   ScenarioTemplate,
   SettlementSummary,
@@ -49,6 +50,7 @@ import {
 } from '../services/negotiationEngine.ts';
 import { evaluateCounteroffer, getRoleConcessionHistory } from '../services/counterofferEvaluation.ts';
 import { advanceAutonomousNegotiation } from '../services/autonomousNegotiation.ts';
+import { detectDeadlock, deadlockResolutionText } from '../services/deadlockDetector.ts';
 import { saveNegotiation } from '../services/apiService';
 
 interface NegotiationArenaProps {
@@ -81,6 +83,13 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeedMs, setPlaySpeedMs] = useState(2400);
   const [settlement, setSettlement] = useState<SettlementSummary | null>(null);
+  const [deadlockStatus, setDeadlockStatus] = useState<DeadlockStatus>(() => ({
+    isDeadlocked: false,
+    reasons: [],
+    reasonText: 'Negotiation is progressing.',
+    resolution: 'none',
+    resolutionAttempts: 0,
+  }));
 
   // User Custom Input State
   const [userInputText, setUserInputText] = useState('');
@@ -142,6 +151,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     if (turns.length === 0) {
       const firstStep = advanceAutonomousNegotiation(scenario, agents, [], 1);
       if (firstStep.turn) setTurns([firstStep.turn]);
+      setDeadlockStatus(firstStep.deadlock);
     }
   }, []);
 
@@ -174,6 +184,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     const result = advanceAutonomousNegotiation(scenario, agents, turns, currentRound);
     if (result.turn) setTurns((previous) => [...previous, result.turn!]);
     setCurrentRound(result.round);
+    setDeadlockStatus(result.deadlock);
     if (result.outcome) {
       setIsPlaying(false);
       setSettlement(result.outcome);
@@ -240,6 +251,8 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
 
       setTurns((prev) => [...prev, aiTurn]);
       setIsAiThinking(false);
+      const status = detectDeadlock([...updatedTurns, aiTurn], currentRound, scenario.orchestrator.maxRounds, scenario.orchestrator.deadlockConfig);
+      setDeadlockStatus(status);
 
       // Advance round if both have spoken
       if (currentRound >= scenario.orchestrator.maxRounds) {
@@ -305,6 +318,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     setCustomDurationTerm('');
     const firstStep = advanceAutonomousNegotiation(scenario, agents, [], 1);
     setTurns(firstStep.turn ? [firstStep.turn] : []);
+    setDeadlockStatus(firstStep.deadlock);
   };
 
   const getPersonalityIcon = (p: string) => {
@@ -414,6 +428,15 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
           </button>
         </div>
       </div>
+
+      <section className={`rounded-2xl border p-3.5 flex items-start gap-3 ${deadlockStatus.isDeadlocked ? 'border-amber-200 bg-amber-50 text-amber-950' : 'border-emerald-100 bg-emerald-50/60 text-emerald-900'}`} aria-live="polite">
+        {deadlockStatus.isDeadlocked ? <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" /> : <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />}
+        <div className="min-w-0">
+          <p className="text-xs font-bold">{deadlockStatus.isDeadlocked ? 'Deadlock / stall detected' : 'Deadlock monitor active'}</p>
+          <p className="mt-0.5 text-[11px] leading-relaxed opacity-85">{deadlockStatus.reasonText} {deadlockStatus.isDeadlocked && deadlockResolutionText[deadlockStatus.resolution]}</p>
+          {deadlockStatus.isDeadlocked && <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide">Resolution: {deadlockStatus.resolution.replace(/_/g, ' ')}</p>}
+        </div>
+      </section>
 
       {/* Main Grid: Left Dialogue Arena & Right Agent Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

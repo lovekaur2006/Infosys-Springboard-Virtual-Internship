@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { PREBUILT_SCENARIOS } from '../src/data/scenarios.ts';
 import { simulateAutonomousNegotiation } from '../src/services/autonomousNegotiation.ts';
+import { detectDeadlock } from '../src/services/deadlockDetector.ts';
 
 const expectedOffers: Record<string, RegExp> = {
   'vendor-pricing': /price|payment|SLA|support|ARR|deal status/i,
@@ -61,3 +62,26 @@ const rejectedRun = simulateAutonomousNegotiation(shortDeadline, shortDeadline.d
 assert.equal(rejectedRun.outcome.status, 'impasse', 'A missed deadline should end in an impasse.');
 assert.equal(rejectedRun.turns.at(-1)?.decision, 'reject', 'The final role should explicitly reject an unresolved offer.');
 console.log('PASS Rejection path: explicit reject and impasse at the round limit');
+
+const stalledTurns = [1, 2, 3].map((round) => ({
+  id: `stalled-${round}`,
+  round,
+  timestamp: '10:00',
+  agentId: 'buyer',
+  agentName: 'Buyer',
+  roleTitle: 'Procurement',
+  personality: 'Collaborative' as const,
+  speechText: 'Our position remains unchanged.',
+  offeredTerms: [{ label: 'Price', value: '₹800,000' }],
+  sentiment: 'assertive' as const,
+  leverageScore: 50,
+  decision: 'reject' as const,
+}));
+const deadlock = detectDeadlock(stalledTurns, 3, 3, { unchangedOfferLimit: 3, repeatedRejectionLimit: 2, repeatedPositionLimit: 2 });
+assert.equal(deadlock.isDeadlocked, true, 'Stalled offers should be detected.');
+assert.ok(deadlock.reasons.includes('no_meaningful_offer_change'), 'Unchanged offers should be identified.');
+assert.ok(deadlock.reasons.includes('repeated_rejection'), 'Repeated rejections should be identified.');
+assert.ok(deadlock.reasons.includes('repeated_position'), 'Repeated positions should be identified.');
+assert.ok(deadlock.reasons.includes('maximum_rounds_reached'), 'Round limits should be identified.');
+assert.equal(deadlock.resolution, 'compromise_proposal', 'First intervention should be a compromise proposal.');
+console.log('PASS Deadlock detector: unchanged offers, rejections, repeated positions, and round limit');
