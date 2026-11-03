@@ -4,6 +4,7 @@
  */
 
 import { AgentConfig, NegotiationTurn, ScenarioTemplate, SettlementSummary } from '../types.ts';
+import { amounts, evaluateCounteroffer } from './counterofferEvaluation.ts';
 
 /**
  * Validates the scenario and agent configuration prior to starting negotiation.
@@ -518,134 +519,424 @@ export function generateAIResponseToUserInput(
   previousTurns: NegotiationTurn[]
 ): NegotiationTurn {
   const agent = agents.find((a) => a.id === counterpartAgentId) || agents[1] || agents[0];
+  const userAgent = agents.find((a) => a.id !== agent.id) || agents[0];
   const p = agent.personality;
+  const maxRounds = scenario.orchestrator.maxRounds;
+  const isFinalRound = currentRound >= maxRounds;
 
+  // 1. Extract numerical values and terms from user input
+  const effectiveUserTerms: { label: string; value: string }[] = userTerms && userTerms.length > 0
+    ? [...userTerms]
+    : [];
+
+  const rawUserAmounts = amounts(`${effectiveUserTerms.map((t) => `${t.label} ${t.value}`).join(' ')} ${userMessage}`);
+  const userAmount = rawUserAmounts.length > 0 ? rawUserAmounts[0] : null;
+
+  if (effectiveUserTerms.length === 0 && userAmount !== null) {
+    effectiveUserTerms.push({ label: 'Proposed Amount', value: `₹${userAmount.toLocaleString('en-IN')}` });
+  }
+
+  // 2. Synthesize user turn for formal boundary & constraint evaluation
+  const userTurn: NegotiationTurn = {
+    id: `turn-user-eval-${Date.now()}`,
+    round: currentRound,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    agentId: userAgent.id,
+    agentName: userAgent.name,
+    roleTitle: userAgent.roleTitle,
+    personality: userAgent.personality,
+    speechText: userMessage,
+    offeredTerms: effectiveUserTerms.length > 0 ? effectiveUserTerms : undefined,
+    sentiment: 'collaborative',
+    leverageScore: 70,
+  };
+
+  const evalResult = evaluateCounteroffer(agent, userTurn, {
+    round: currentRound,
+    maxRounds,
+    turns: previousTurns,
+    scenarioId: scenario.id,
+    isFinalRound,
+  });
+
+  // 3. Analyze previous context & human negotiation strategy
+  const previousUserTurns = previousTurns.filter((t) => t.agentId === userAgent.id || t.agentName.includes('(You)'));
+  const previousUserAmounts = previousUserTurns.flatMap((t) =>
+    amounts(`${t.offeredTerms?.map((item) => item.value).join(' ') || ''} ${t.speechText}`)
+  );
+  const lastUserAmount = previousUserAmounts.length > 0 ? previousUserAmounts[previousUserAmounts.length - 1] : null;
+
+  // Repetition / stall check
+  let isRepeating = false;
+  if (userAmount !== null && lastUserAmount !== null && userAmount === lastUserAmount && previousUserTurns.length >= 1) {
+    isRepeating = true;
+  }
+
+  // Backtracking check
+  let isBacktracking = false;
+  const isCostMinimizer = /buyer|procurement|cfo/i.test(`${userAgent.id} ${userAgent.roleTitle}`);
+  if (userAmount !== null && lastUserAmount !== null && userAmount !== lastUserAmount) {
+    if (isCostMinimizer && userAmount < lastUserAmount) {
+      isBacktracking = true; // Buyer lowered offer
+    } else if (!isCostMinimizer && userAmount > lastUserAmount) {
+      isBacktracking = true; // Seller/candidate raised asking price
+    }
+  }
+
+  // Strategy detection from language and concessions
   const lowerMsg = userMessage.toLowerCase();
+  const hasAcceptIntent = /accept|agree|deal|done|close|finalize|sign|settle/i.test(lowerMsg);
+  const isCooperative = /cooperat|collaborat|win-win|middle|compromise|flexib|mutual|partner|work together|fair|share/i.test(lowerMsg);
+  const isAggressive = /must|take it or leave it|non-negotiable|final offer|walk away|unacceptable|demand|refuse|or else|hard line|insist/i.test(lowerMsg);
+  const hasGrossViolation = evalResult.signals.some((s) => s.state === 'violated');
+  const isUnreasonable = hasGrossViolation || evalResult.score < 35;
+
+  let decision: 'accept' | 'counter' | 'reject' = evalResult.decision;
+  if (hasAcceptIntent && !hasGrossViolation && evalResult.score >= 50) {
+    decision = 'accept';
+  } else if (isFinalRound && (hasGrossViolation || evalResult.score < 60)) {
+    decision = 'reject';
+  } else if (!isFinalRound && decision === 'reject') {
+    decision = 'counter';
+  }
+
   let responseSpeech = '';
   let counterTerms: { label: string; value: string }[] = [];
   let concessionNote = '';
   let sentiment: 'assertive' | 'collaborative' | 'defensive' | 'mediating' = 'collaborative';
-  let leverageScore = 70;
+  let leverageScore = 75;
 
+  // 4. Scenario & Role Tailored Generation
   if (scenario.id === 'vendor-pricing') {
-    if (agent.roleTitle.toLowerCase().includes('supplier') || agent.id.includes('seller') || agent.name.includes('Vendor')) {
-      // Counterparty is Vendor
-      if (p === 'Aggressive') {
+    const isVendor = /seller|supplier|vendor/i.test(`${agent.id} ${agent.roleTitle}`);
+    if (isVendor) {
+      // AI IS VENDOR
+      if (decision === 'accept') {
+        sentiment = 'collaborative';
+        leverageScore = 90;
+        concessionNote = 'Mutually acceptable agreement reached on price floor and multi-year commitment.';
+        responseSpeech = `Thank you for working constructively with CloudScale. At ₹${(userAmount || 800000).toLocaleString('en-IN')}/year on a 2-year contract with enterprise support and Net-45 terms, we have reached full alignment. I am confirming our agreement.`;
+        counterTerms = [
+          { label: 'Agreed ARR', value: `₹${(userAmount || 800000).toLocaleString('en-IN')}/yr` },
+          { label: 'Contract Term', value: '2 Years' },
+          { label: 'Warranty & Support', value: '1-Year Enterprise Warranty' },
+          { label: 'Deal Status', value: 'ACCEPTED' },
+        ];
+      } else if (decision === 'reject') {
         sentiment = 'assertive';
-        leverageScore = 78;
-        concessionNote = 'Pushing back against buyer downward price pressure while defending minimum margin floor.';
-        if (lowerMsg.includes('accept') || lowerMsg.includes('deal') || lowerMsg.includes('agree')) {
-          responseSpeech = `We appreciate your willingness to close. If we finalize today at ₹8,20,000 with a 2-year commitment, we will include 2 years of priority support and warranty. Otherwise, our floor remains firm.`;
+        leverageScore = 65;
+        concessionNote = 'Offer rejected due to margin floor violation at deadline.';
+        responseSpeech = `Our minimum viable operational floor is ₹8,00,000. Your offer of ₹${(userAmount || 0).toLocaleString('en-IN')} falls below our non-negotiable cost baseline. As we have reached the round limit without resolving this boundary, we must respectfully decline.`;
+        counterTerms = [
+          { label: 'Status', value: 'REJECTED' },
+          { label: 'Reason', value: 'Below ₹8,00,000 margin floor' },
+        ];
+      } else {
+        // Counter
+        if (isUnreasonable) {
+          sentiment = 'assertive';
+          leverageScore = 82;
+          concessionNote = 'Holding firm on ₹8,00,000 floor against unreasonable down-pricing.';
+          responseSpeech = `Your proposed rate of ₹${(userAmount || 0).toLocaleString('en-IN')} is significantly below our non-negotiable floor of ₹8,00,000. At that level, enterprise infrastructure cannot be sustained. If you can meet our baseline at ₹8,20,000 on a 2-year term, we will bundle premium support and 99.99% uptime SLA.`;
           counterTerms = [
-            { label: 'Proposed Price', value: '₹8,20,000' },
-            { label: 'Term Length', value: '2-Year Contract' },
-            { label: 'Support', value: '2 Years Included' },
+            { label: 'Revised Price', value: '₹8,20,000/yr' },
+            { label: 'Term Length', value: '2-Year Agreement' },
+            { label: 'Support SLA', value: '99.99% Premium Support' },
+          ];
+        } else if (isRepeating) {
+          sentiment = 'defensive';
+          leverageScore = 78;
+          concessionNote = 'Cautioning against deadlock on repeated unchanged price.';
+          responseSpeech = `You have maintained the same proposal of ₹${(userAmount || 800000).toLocaleString('en-IN')} across multiple exchanges. Without movement from both sides, this negotiation risks reaching an impasse. In the spirit of closing, we can move to ₹8,10,000 if paired with Net-45 terms.`;
+          counterTerms = [
+            { label: 'Bridging Price', value: '₹8,10,000/yr' },
+            { label: 'Payment Terms', value: 'Net-45' },
+            { label: 'Contract Term', value: '2 Years' },
+          ];
+        } else if (isBacktracking) {
+          sentiment = 'assertive';
+          leverageScore = 80;
+          concessionNote = 'Calling out backward step in procurement proposal.';
+          responseSpeech = `We noticed your revised position of ₹${(userAmount || 0).toLocaleString('en-IN')} steps back from your previous offer of ₹${lastUserAmount?.toLocaleString('en-IN')}. To maintain momentum towards a final agreement in Round ${currentRound}, we need consistent forward progress.`;
+          counterTerms = [
+            { label: 'Firm Anchor', value: '₹8,25,000/yr' },
+            { label: 'Term Length', value: '2 Years' },
+          ];
+        } else if (isAggressive) {
+          sentiment = 'assertive';
+          leverageScore = 85;
+          concessionNote = 'Pushing back assertively against aggressive procurement pressure.';
+          responseSpeech = `CloudScale infrastructure processed 40 million transactions for OmniTrans this quarter without failure. We cannot accept your demand of ₹${(userAmount || 0).toLocaleString('en-IN')}, which cuts below our operational floor of ₹8,00,000. Our counter-proposal is ₹8,25,000/year for a 2-year commitment, which already represents a significant discount off our standard list rate.`;
+          counterTerms = [
+            { label: 'Proposed Price', value: '₹8,25,000/yr' },
+            { label: 'Term Length', value: '24 Months' },
+            { label: 'Support SLA', value: 'Enterprise Support' },
           ];
         } else {
-          responseSpeech = `Your proposal pushes hard on our margins. At that rate, standard enterprise support would normally be curtailed. However, if you commit to a 2-year contract duration, we can meet you at ₹8,25,000 and bundle full warranty and 2 years of support.`;
+          // Cooperative / Standard
+          sentiment = 'collaborative';
+          leverageScore = 80;
+          concessionNote = 'Reciprocating cooperative move with a balanced price bridge.';
+          responseSpeech = `We appreciate your collaborative approach. In Round ${currentRound}, we are prepared to meet you in the middle at ₹8,10,000/year on a 2-year agreement, bundling our Predictive AI Suite and full 1-year warranty.`;
           counterTerms = [
-            { label: 'Counter Offer', value: '₹8,25,000' },
-            { label: 'Contract Term', value: '24 Months' },
-            { label: 'Support SLA', value: '2 Years Premium Support' },
+            { label: 'Compromise Price', value: '₹8,10,000/yr' },
+            { label: 'Contract Duration', value: '2 Years' },
+            { label: 'Included Value', value: 'Predictive AI Suite + 1-Yr Warranty' },
           ];
         }
-      } else if (p === 'Collaborative') {
-        sentiment = 'collaborative';
-        leverageScore = 82;
-        concessionNote = 'Constructive trade-off: aligning buyer price constraints with contract duration.';
-        responseSpeech = `Thank you for the clear proposal. We want this to be a win-win partnership. We can accept ₹8,00,000 provided we lock in a 2-year agreement and Net-45 payment terms. We will also include 1 year of comprehensive warranty and technical onboarding.`;
-        counterTerms = [
-          { label: 'Agreed Price Target', value: '₹8,00,000' },
-          { label: 'Contract Term', value: '2 Years' },
-          { label: 'Warranty & Support', value: '1 Year Warranty Included' },
-        ];
-      } else {
-        // Risk-Averse
-        sentiment = 'defensive';
-        leverageScore = 68;
-        concessionNote = 'Insisting on strict SLA metrics and payment cadence before finalizing concessions.';
-        responseSpeech = `We hear your budget target. From our risk assessment, lowering to that figure requires clear contractual milestones and Net-30 payment guarantees. If you agree to those terms, we can sign off on ₹8,10,000 with 1 year warranty.`;
-        counterTerms = [
-          { label: 'Conservative Offer', value: '₹8,10,000' },
-          { label: 'Payment Terms', value: 'Net-30 Cadence' },
-          { label: 'Warranty', value: '1 Year Standard Warranty' },
-        ];
       }
     } else {
-      // Counterparty is Buyer
-      if (p === 'Aggressive') {
-        sentiment = 'assertive';
-        leverageScore = 80;
-        concessionNote = 'Holding firm on corporate budget ceiling of ₹8,00,000.';
-        responseSpeech = `Our board has set a strict ceiling of ₹8,00,000. We cannot exceed that amount without formal escalation. If you can include warranty and 1 year of support within ₹8,00,000, we have executive sign-off ready today.`;
+      // AI IS BUYER (Procurement Manager)
+      if (decision === 'accept') {
+        sentiment = 'collaborative';
+        leverageScore = 88;
+        concessionNote = 'Approved: proposal meets procurement budget cap and warranty requirements.';
+        responseSpeech = `OmniTrans Procurement approves these terms. At ₹${(userAmount || 800000).toLocaleString('en-IN')}/year with mandatory warranty and 2-year continuity, our audit requirements are satisfied. We have an agreement.`;
         counterTerms = [
-          { label: 'Ceiling Price', value: '₹8,00,000 Cap' },
-          { label: 'Warranty', value: 'Mandatory 1 Year' },
+          { label: 'Agreed Price', value: `₹${(userAmount || 800000).toLocaleString('en-IN')}/yr` },
+          { label: 'Duration', value: '2 Years' },
+          { label: 'Warranty & Support', value: '1 Year Full Coverage' },
+          { label: 'Deal Status', value: 'ACCEPTED' },
+        ];
+      } else if (decision === 'reject') {
+        sentiment = 'assertive';
+        leverageScore = 65;
+        concessionNote = 'Rejected: offer exceeds procurement ceiling at round limit.';
+        responseSpeech = `Our board has established an absolute budget cap of ₹8,00,000. Your proposal of ₹${(userAmount || 0).toLocaleString('en-IN')} exceeds our spending mandate. As we have reached the round limit, we must conclude without agreement.`;
+        counterTerms = [
+          { label: 'Status', value: 'REJECTED' },
+          { label: 'Reason', value: 'Exceeds ₹8,00,000 budget cap' },
         ];
       } else {
-        sentiment = 'collaborative';
-        leverageScore = 75;
-        concessionNote = 'Willing to offer multi-year commitment in exchange for matching price target.';
-        responseSpeech = `We understand your position. If you can meet our ₹8,00,000 cap, we will agree to a 2-year contract duration and prompt Net-45 payment settlement. Does this structure work for you?`;
-        counterTerms = [
-          { label: 'Proposed Price', value: '₹8,00,000' },
-          { label: 'Term Commitment', value: '2 Years' },
-          { label: 'Payment Terms', value: 'Net-45' },
-        ];
+        if (isUnreasonable) {
+          sentiment = 'assertive';
+          leverageScore = 82;
+          concessionNote = 'Defending strict ₹8,00,000 budget ceiling against inflated vendor quote.';
+          responseSpeech = `A renewal quote of ₹${(userAmount || 0).toLocaleString('en-IN')} is completely outside our fiscal parameters. Our approved budget ceiling is ₹8,00,000 with mandatory warranty. If you cannot meet our cap, we will be forced to transition secondary workloads to alternative vendors.`;
+          counterTerms = [
+            { label: 'Budget Cap', value: '₹8,00,000/yr' },
+            { label: 'Warranty Requirement', value: 'Mandatory 1 Year' },
+            { label: 'Payment Terms', value: 'Net-60' },
+          ];
+        } else if (isRepeating) {
+          sentiment = 'defensive';
+          leverageScore = 78;
+          concessionNote = 'Noting vendor price stagnation and demanding reciprocal movement.';
+          responseSpeech = `You have held firm on ₹${(userAmount || 800000).toLocaleString('en-IN')} without making a meaningful concession. To prevent this negotiation from stalling into deadlock, we can offer Net-45 payment terms if you bring the annual rate to ₹7,90,000.`;
+          counterTerms = [
+            { label: 'Counter Price', value: '₹7,90,000/yr' },
+            { label: 'Payment Cadence', value: 'Net-45' },
+          ];
+        } else if (isAggressive) {
+          sentiment = 'assertive';
+          leverageScore = 80;
+          concessionNote = 'Holding firm against vendor aggressive pricing stance.';
+          responseSpeech = `We cannot be pressured into exceeding our approved fiscal limits. Our cap is ₹8,00,000 with mandatory 1-year warranty and enterprise SLA credits. That is our position.`;
+          counterTerms = [
+            { label: 'Budget Cap', value: '₹8,00,000/yr' },
+            { label: 'Warranty Requirement', value: '1 Year Mandatory' },
+          ];
+        } else {
+          sentiment = 'collaborative';
+          leverageScore = 80;
+          concessionNote = 'Offering 2-year commitment in exchange for matching price ceiling.';
+          responseSpeech = `Thank you for the revised proposal. We want to maintain our partnership with CloudScale. If you can meet us at ₹8,00,000/year, we will agree to a 24-month commitment with Net-45 payment terms and mandatory warranty coverage.`;
+          counterTerms = [
+            { label: 'Target Price', value: '₹8,00,000/yr' },
+            { label: 'Commitment', value: '2-Year Agreement' },
+            { label: 'Warranty', value: '1 Year Included' },
+          ];
+        }
       }
     }
   } else if (scenario.id === 'job-offer') {
-    if (agent.roleTitle.toLowerCase().includes('recruiter') || agent.name.includes('Recruiter')) {
-      // Counterparty is Recruiter
-      if (p === 'Aggressive') {
-        sentiment = 'assertive';
-        responseSpeech = `We recognize your capabilities, but we must protect internal band parity across our engineering team. We can offer ₹8,20,000 base with an upfront ₹50,000 joining bonus and 2 days remote flexibility. That brings your total Year-1 package above your threshold.`;
-        counterTerms = [
-          { label: 'Base Salary', value: '₹8,20,000' },
-          { label: 'Joining Bonus', value: '₹50,000' },
-          { label: 'Work Model', value: 'Hybrid (2 Days Remote)' },
-        ];
-      } else if (p === 'Collaborative') {
+    const isRecruiter = /recruiter|employer|vp/i.test(`${agent.id} ${agent.roleTitle}`);
+    if (isRecruiter) {
+      // AI IS RECRUITER
+      if (decision === 'accept') {
         sentiment = 'collaborative';
-        responseSpeech = `That makes complete sense. We want you on the team. We can structure your package at ₹8,60,000 base, a ₹40,000 joining bonus, and 3 days per week remote flexibility with full compute resource support. Would you be ready to accept this package?`;
+        leverageScore = 90;
+        concessionNote = 'Offer accepted: candidate package within approved department band.';
+        responseSpeech = `We are thrilled to welcome you to Apex Robotics! A base salary of ₹${(userAmount || 860000).toLocaleString('en-IN')} paired with signing bonus and remote flexibility aligns perfectly with our team. We are formalizing the offer letter now.`;
         counterTerms = [
-          { label: 'Base Salary', value: '₹8,60,000' },
-          { label: 'Joining Bonus', value: '₹40,000' },
-          { label: 'Work Model', value: '3 Days Remote / WFH' },
+          { label: 'Agreed Base Salary', value: `₹${(userAmount || 860000).toLocaleString('en-IN')}` },
+          { label: 'Signing Bonus', value: '₹40,000 Upfront' },
+          { label: 'Work Arrangement', value: 'Hybrid (2 Days WFH)' },
+          { label: 'Offer Status', value: 'ACCEPTED' },
+        ];
+      } else if (decision === 'reject') {
+        sentiment = 'assertive';
+        leverageScore = 65;
+        concessionNote = 'Rejected: compensation demand exceeds corporate salary band ceiling.';
+        responseSpeech = `Our Grade L6 engineering band strictly caps base salary at ₹9,00,000 to maintain internal equity. Your requested package of ₹${(userAmount || 0).toLocaleString('en-IN')} exceeds what we can approve. At the round deadline, we must withdraw.`;
+        counterTerms = [
+          { label: 'Status', value: 'REJECTED' },
+          { label: 'Reason', value: 'Exceeds ₹9,00,000 band cap' },
         ];
       } else {
-        sentiment = 'defensive';
-        responseSpeech = `Our compensation guidelines cap base salary strictly at ₹8,50,000 for this level. To bridge the difference safely, we can offer performance milestone bonuses and flexible hours with immediate joining preference.`;
-        counterTerms = [
-          { label: 'Base Salary Cap', value: '₹8,50,000' },
-          { label: 'Incentive', value: 'Quarterly Milestone Bonus' },
-        ];
+        if (isUnreasonable) {
+          sentiment = 'assertive';
+          leverageScore = 80;
+          concessionNote = 'Protecting salary band parity while offering non-base incentives.';
+          responseSpeech = `We recognize your exceptional skill set, but ₹${(userAmount || 0).toLocaleString('en-IN')} exceeds our engineering salary band ceiling of ₹9,00,000. To bridge the cash difference without distorting team parity, we can offer ₹8,60,000 base with an upfront ₹50,000 signing bonus and 3 days remote flexibility.`;
+          counterTerms = [
+            { label: 'Base Salary Cap', value: '₹8,60,000' },
+            { label: 'Signing Bonus', value: '₹50,000 Upfront' },
+            { label: 'Work Model', value: 'Hybrid (3 Days WFH)' },
+          ];
+        } else if (isRepeating) {
+          sentiment = 'defensive';
+          leverageScore = 76;
+          concessionNote = 'Addressing repeated candidate anchor with equity and bonus sweetener.';
+          responseSpeech = `You have reiterated your ask of ₹${(userAmount || 900000).toLocaleString('en-IN')}. While we cannot breach the base cap, we can enhance the total Year-1 package to exceed your target by increasing the equity grant to ₹1,40,000.`;
+          counterTerms = [
+            { label: 'Base Salary', value: '₹8,70,000' },
+            { label: 'Signing Bonus', value: '₹40,000' },
+            { label: 'Equity Grant', value: '₹1,40,000 / 4-yr' },
+          ];
+        } else {
+          sentiment = 'collaborative';
+          leverageScore = 82;
+          concessionNote = 'Balancing candidate salary goals with company remote flexibility guidelines.';
+          responseSpeech = `Thank you for the thoughtful proposal. In Round ${currentRound}, we can offer ₹8,60,000 base with a ₹40,000 signing bonus and 3 days remote flexibility per week, plus full compute cluster access for your research.`;
+          counterTerms = [
+            { label: 'Offered Base', value: '₹8,60,000' },
+            { label: 'Signing Bonus', value: '₹40,000' },
+            { label: 'Work Model', value: '3 Days Remote' },
+          ];
+        }
       }
     } else {
-      // Counterparty is Candidate
-      if (p === 'Collaborative') {
+      // AI IS CANDIDATE
+      if (decision === 'accept') {
         sentiment = 'collaborative';
-        responseSpeech = `I appreciate your flexibility on the numbers. If we can lock in ₹8,80,000 total compensation with at least 3 days remote flexibility and research compute access, I am ready to sign the formal offer letter.`;
+        leverageScore = 90;
+        concessionNote = 'Accepted: offer fulfills compensation expectations and remote flexibility.';
+        responseSpeech = `I appreciate your partnership and flexibility. A package of ₹${(userAmount || 900000).toLocaleString('en-IN')} with remote flexibility and research compute quota meets my career objectives. I am excited to accept and join Apex Robotics!`;
         counterTerms = [
-          { label: 'Requested Comp', value: '₹8,80,000 Package' },
-          { label: 'Remote Flexibility', value: '3 Days WFH' },
+          { label: 'Total Package', value: `₹${(userAmount || 900000).toLocaleString('en-IN')}` },
+          { label: 'Work Arrangement', value: 'Remote with quarterly on-site' },
+          { label: 'Offer Status', value: 'ACCEPTED' },
+        ];
+      } else if (decision === 'reject') {
+        sentiment = 'assertive';
+        leverageScore = 65;
+        concessionNote = 'Rejected: compensation offer falls short of minimum viable floor.';
+        responseSpeech = `An offer of ₹${(userAmount || 0).toLocaleString('en-IN')} falls significantly short of my competing opportunities and minimum career threshold of ₹9,00,000. As we have reached the round limit without alignment, I must respectfully decline.`;
+        counterTerms = [
+          { label: 'Status', value: 'REJECTED' },
+          { label: 'Reason', value: 'Below ₹9,00,000 floor' },
         ];
       } else {
-        sentiment = 'assertive';
-        responseSpeech = `Given my competing options, my bottom line remains ₹9,00,000 or an equivalent package with strong equity and remote work assurance. If we can reach that mark, I will decline other talks.`;
-        counterTerms = [
-          { label: 'Target Floor', value: '₹9,00,000' },
-        ];
+        if (isUnreasonable) {
+          sentiment = 'assertive';
+          leverageScore = 80;
+          concessionNote = 'Declining below-market offer while reiterating competing lab leverage.';
+          responseSpeech = `A base offer of ₹${(userAmount || 0).toLocaleString('en-IN')} is below my competing market offers. Given my specialized expertise in model engineering, I can only consider joining Apex if total Year-1 compensation reaches at least ₹9,00,000, combined with remote work flexibility.`;
+          counterTerms = [
+            { label: 'Target Base', value: '₹8,80,000' },
+            { label: 'Signing Bonus', value: '₹40,000' },
+            { label: 'Remote Flexibility', value: 'Full Remote / 4 Days WFH' },
+          ];
+        } else {
+          sentiment = 'collaborative';
+          leverageScore = 82;
+          concessionNote = 'Showing willingness to trade cash for equity and remote flexibility.';
+          responseSpeech = `I appreciate the offer. If we can adjust the package to ₹8,70,000 base with a ₹50,000 signing bonus and 80% remote flexibility with quarterly hardware test weeks on-site, I am ready to commit today.`;
+          counterTerms = [
+            { label: 'Requested Base', value: '₹8,70,000' },
+            { label: 'Signing Bonus', value: '₹50,000' },
+            { label: 'Work Arrangement', value: '80% Remote' },
+          ];
+        }
       }
     }
   } else {
-    // Project Budget Allocation / Generic
-    sentiment = 'collaborative';
-    responseSpeech = `I hear your position and constraints regarding this allocation. Let us align on a balanced distribution that satisfies critical project milestones while respecting the overall committee cap.`;
-    counterTerms = [
-      { label: 'Proposed Allocation', value: 'Balanced Phase 1 & 2' },
-      { label: 'Milestones', value: 'Quarterly Review Tranches' },
-    ];
+    // SCENARIO 3: BUDGET ALLOCATION
+    const isCFO = /cfo|finance|chair/i.test(`${agent.id} ${agent.roleTitle}`);
+    const isProduct = /product/i.test(`${agent.id} ${agent.roleTitle}`);
+    const isInfra = /infra|security/i.test(`${agent.id} ${agent.roleTitle}`);
+
+    if (isCFO) {
+      if (decision === 'accept') {
+        sentiment = 'mediating';
+        leverageScore = 95;
+        concessionNote = 'Capital expenditure allocation approved within corporate fiscal boundaries.';
+        responseSpeech = `The Corporate Budget Committee decrees approval for this allocation. Total expenditure is contained within ₹14,00,000, preserving our mandatory ₹1,00,000 reserve buffer. Both initiatives proceed on phased milestone disbursements.`;
+        counterTerms = [
+          { label: 'Total Capex', value: '₹14,00,000' },
+          { label: 'Reserve Buffer', value: '₹1,00,000 Preserved' },
+          { label: 'Disbursement', value: '50% Upfront, 50% Post-Q3' },
+          { label: 'Committee Status', value: 'APPROVED' },
+        ];
+      } else if (decision === 'reject') {
+        sentiment = 'assertive';
+        leverageScore = 65;
+        concessionNote = 'Rejected: combined department requests exceed board-mandated capex ceiling.';
+        responseSpeech = `The combined request of ₹${(userAmount || 0).toLocaleString('en-IN')} exceeds our absolute board ceiling of ₹15,00,000. Because the teams have not identified necessary synergies at the round deadline, the committee must reject this request.`;
+        counterTerms = [
+          { label: 'Status', value: 'REJECTED' },
+          { label: 'Reason', value: 'Exceeds ₹15,00,000 ceiling' },
+        ];
+      } else {
+        if (isUnreasonable) {
+          sentiment = 'assertive';
+          leverageScore = 85;
+          concessionNote = 'Enforcing strict ₹14,00,000 capex pool and mandatory ₹1,00,000 buffer.';
+          responseSpeech = `Your requested allocation of ₹${(userAmount || 0).toLocaleString('en-IN')} leaves insufficient buffer for corporate solvency. The maximum available pool is ₹14,00,000 total. Product Innovation must cap at ₹7,50,000 and Infrastructure at ₹6,50,000. Both departments must phase non-critical features.`;
+          counterTerms = [
+            { label: 'Capex Pool Cap', value: '₹14,00,000' },
+            { label: 'Reserve Requirement', value: '₹1,00,000 Mandatory' },
+            { label: 'Structure', value: 'Phased Tranches' },
+          ];
+        } else {
+          sentiment = 'collaborative';
+          leverageScore = 88;
+          concessionNote = 'Proposing balanced allocation with phased tranches.';
+          responseSpeech = `Thank you for reviewing your department requirements. In Round ${currentRound}, we propose authorizing ₹7,50,000 for Product Innovation and ₹6,50,000 for Infrastructure, with 50% disbursed upfront and 50% unlocked upon Q3 audit completion.`;
+          counterTerms = [
+            { label: 'Product Allocation', value: '₹7,50,000' },
+            { label: 'Infra Allocation', value: '₹6,50,000' },
+            { label: 'Reserve Buffer', value: '₹1,00,000 Intact' },
+          ];
+        }
+      }
+    } else if (isProduct) {
+      if (decision === 'accept') {
+        sentiment = 'collaborative';
+        responseSpeech = `Product Innovation agrees! With ₹${(userAmount || 750000).toLocaleString('en-IN')}, we can hit our Q4 conversational banking launch on schedule while keeping design partners onboard.`;
+        counterTerms = [
+          { label: 'Product Budget', value: `₹${(userAmount || 750000).toLocaleString('en-IN')}` },
+          { label: 'Launch Window', value: 'Q4 Consumer Peak' },
+          { label: 'Status', value: 'ACCEPTED' },
+        ];
+      } else {
+        sentiment = 'assertive';
+        responseSpeech = `We require at least ₹7,50,000 to launch our generative banking assistant on time. Below ₹6,50,000, we would be forced to cancel core contractor squads. We can phase custom avatars to next fiscal year if we secure ₹7,50,000 today.`;
+        counterTerms = [
+          { label: 'Required Allocation', value: '₹7,50,000' },
+          { label: 'Phasing', value: 'Avatars deferred to next FY' },
+        ];
+      }
+    } else {
+      // Infra Lead
+      if (decision === 'accept') {
+        sentiment = 'collaborative';
+        responseSpeech = `Infrastructure accepts! An allocation of ₹${(userAmount || 650000).toLocaleString('en-IN')} fully secures our mandatory SOC-2 Type II audit remediation and multi-region database failover.`;
+        counterTerms = [
+          { label: 'Infra Budget', value: `₹${(userAmount || 650000).toLocaleString('en-IN')}` },
+          { label: 'SOC-2 Audit', value: '100% Protected' },
+          { label: 'Status', value: 'ACCEPTED' },
+        ];
+      } else {
+        sentiment = 'defensive';
+        responseSpeech = `Our SOC-2 audit remediation requires ₹2,50,000 legally by November. With database clustering, our absolute operational floor is ₹5,50,000. By leveraging 3-year reserved cloud instances, we can reduce our request from ₹7,00,000 to ₹6,50,000.`;
+        counterTerms = [
+          { label: 'Revised Infra Request', value: '₹6,50,000' },
+          { label: 'SOC-2 Compliance', value: '₹2,50,000 Protected' },
+        ];
+      }
+    }
   }
 
   return {
@@ -661,6 +952,10 @@ export function generateAIResponseToUserInput(
     concessionNote,
     sentiment,
     leverageScore,
+    decision,
+    decisionRationale: evalResult.decisionRationale,
+    evaluationScore: evalResult.score,
+    respondingToTurnId: previousTurns.length > 0 ? previousTurns[previousTurns.length - 1].id : undefined,
   };
 }
 

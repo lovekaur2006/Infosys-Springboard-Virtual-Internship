@@ -72,7 +72,7 @@ const meaningfulWords = (text: string) =>
   ].includes(word)) || [];
 
 export const amounts = (text: string): number[] =>
-  [...text.matchAll(/(?:₹|rs\.?\s*)?([\d,]+(?:\.\d+)?)/gi)]
+  [...text.matchAll(/(?:₹|rs\.?\s*)?(\d[\d,]*(?:\.\d+)?)/gi)]
     .map((match) => Number(match[1].replace(/,/g, '')))
     .filter(Number.isFinite);
 
@@ -107,6 +107,10 @@ function parseFinancialMetric(agent: AgentConfig): {
   for (const c of agent.keyConstraints) {
     const cAmounts = amounts(c);
     if (!cAmounts.length) continue;
+    if (cAmounts.length >= 2 || /range|between/i.test(c)) {
+      floor = Math.min(...cAmounts);
+      ceiling = Math.max(...cAmounts);
+    }
     if (/maximum|cap|ceiling|no more|not exceed|under|below|budget limit/i.test(c)) {
       ceiling = cAmounts[0];
     }
@@ -317,12 +321,65 @@ export function evaluateConstraints(
     const overlap = words.filter((word) => offerWords.has(word));
     const area = termArea(constraint);
     const relevantTerms = offeredTerms.filter((term) => termArea(`${term.label} ${term.value}`) === area);
-    const limit = amounts(constraint)[0];
+    const cAmounts = amounts(constraint);
+    const limit = cAmounts[0];
     const offerValues = relevantTerms.flatMap((term) => amounts(term.value));
 
     // Numerical constraint evaluation
-    if (area === 'money' && limit !== undefined && offerValues.length) {
+    if (area === 'money' && cAmounts.length > 0 && offerValues.length) {
       const value = offerValues[0];
+      const isRange = cAmounts.length >= 2 || /range|between/i.test(constraint);
+
+      if (isRange) {
+        const lowerLimit = Math.min(...cAmounts);
+        const upperLimit = Math.max(...cAmounts);
+
+        if (value > upperLimit) {
+          const delta = value - upperLimit;
+          if (isFinalRound || delta > upperLimit * 0.35) {
+            violatedConstraints.push(constraint);
+            return {
+              constraint,
+              isRedLine,
+              state: 'violated',
+              detail: `Offer ₹${value.toLocaleString('en-IN')} exceeds upper limit ₹${upperLimit.toLocaleString('en-IN')} by ₹${delta.toLocaleString('en-IN')}.`,
+            };
+          }
+          return {
+            constraint,
+            isRedLine,
+            state: 'at-risk',
+            detail: `Offer ₹${value.toLocaleString('en-IN')} exceeds ceiling ₹${upperLimit.toLocaleString('en-IN')}; concession required.`,
+          };
+        }
+
+        if (value < lowerLimit) {
+          const deficit = lowerLimit - value;
+          if (isFinalRound || deficit > lowerLimit * 0.35) {
+            violatedConstraints.push(constraint);
+            return {
+              constraint,
+              isRedLine,
+              state: 'violated',
+              detail: `Offer ₹${value.toLocaleString('en-IN')} is below required floor ₹${lowerLimit.toLocaleString('en-IN')} by ₹${deficit.toLocaleString('en-IN')}.`,
+            };
+          }
+          return {
+            constraint,
+            isRedLine,
+            state: 'at-risk',
+            detail: `Offer ₹${value.toLocaleString('en-IN')} is below floor ₹${lowerLimit.toLocaleString('en-IN')}; concession required.`,
+          };
+        }
+
+        return {
+          constraint,
+          isRedLine,
+          state: 'met',
+          detail: `Offer ₹${value.toLocaleString('en-IN')} is within range ₹${lowerLimit.toLocaleString('en-IN')} - ₹${upperLimit.toLocaleString('en-IN')}.`,
+        };
+      }
+
       const isUpperBound = /maximum|cap|ceiling|no more|not exceed|under|below|budget limit/i.test(constraint);
       const isLowerBound = /minimum|floor|at least|no less|above/i.test(constraint);
 

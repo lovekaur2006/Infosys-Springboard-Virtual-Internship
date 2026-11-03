@@ -303,11 +303,13 @@ export const getGoogleIdentityToken = (): string | null => cachedIdentityToken;
 export const googleCalendarSignIn = async (): Promise<{ user: CalendarUser; accessToken: string; calendarGranted: boolean } | null> => {
   if (cachedAccessToken && cachedAccessTokenExpiresAt > Date.now() + 60_000) {
     const calendarGranted = sessionStorage.getItem(SESSION_CALENDAR_KEY) === 'true';
-    return {
-      user: cachedUser || { displayName: null, email: null, photoURL: null },
-      accessToken: cachedAccessToken,
-      calendarGranted,
-    };
+    if (calendarGranted) {
+      return {
+        user: cachedUser || { displayName: null, email: null, photoURL: null },
+        accessToken: cachedAccessToken,
+        calendarGranted,
+      };
+    }
   }
   const result = await requestGoogleToken(CALENDAR_SCOPES);
   if (!result) return null;

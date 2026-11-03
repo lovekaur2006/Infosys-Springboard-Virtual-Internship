@@ -176,9 +176,12 @@ export function analyseDeadlock(
 ): DeadlockAnalysis {
   const config: DeadlockConfig = { ...DEFAULT_DEADLOCK_CONFIG, ...overrides };
 
-  const participantTurns   = turns.filter((t) => !isMediatorTurn(t));
-  const offerTurns         = participantTurns.filter((t) => (t.offeredTerms?.length ?? 0) > 0);
   const resolutionAttempts = turns.filter(isMediatorTurn).length;
+
+  const lastMediatorIdx = turns.map(isMediatorTurn).lastIndexOf(true);
+  const recentHistory = lastMediatorIdx >= 0 ? turns.slice(lastMediatorIdx + 1) : turns;
+  const participantTurns = recentHistory.filter((t) => !isMediatorTurn(t));
+  const offerTurns = participantTurns.filter((t) => (t.offeredTerms?.length ?? 0) > 0);
 
   const reasons:     DeadlockReason[] = [];
   const diagnostics: Partial<Record<DeadlockReason, string>> = {};

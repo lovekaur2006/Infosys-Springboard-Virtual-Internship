@@ -85,7 +85,7 @@ function roleAcceptsOffer(
   return false;
 }
 
-function buildImpasse(scenario: ScenarioTemplate, agents: AgentConfig[], turns: NegotiationTurn[]): SettlementSummary {
+export function buildImpasse(scenario: ScenarioTemplate, agents: AgentConfig[], turns: NegotiationTurn[]): SettlementSummary {
   const lastTurn = turns[turns.length - 1];
   const lastOffer = [...turns].reverse().find((turn) => turn.offeredTerms?.length);
   return {
@@ -117,6 +117,15 @@ export function advanceAutonomousNegotiation(
   }
 
   const previous = turns[turns.length - 1];
+  const deadlock = deadlockFor(scenario, turns, currentRound);
+  if (deadlock.isDeadlocked && previous.agentId !== 'orchestrator-mediator') {
+    if (deadlock.resolution === 'breakdown') {
+      return { turn: null, round: currentRound, outcome: buildImpasse(scenario, agents, turns), deadlock };
+    }
+    const intervention = buildDeadlockResolutionTurn(scenario, turns, currentRound, deadlock);
+    return { turn: intervention, round: currentRound, outcome: null, deadlock };
+  }
+
   const previousParticipantTurn = [...turns].reverse().find((turn) => turn.agentId !== 'orchestrator-mediator') || previous;
   const previousAgentIndex = Math.max(0, agents.findIndex((agent) => agent.id === previousParticipantTurn.agentId));
   const nextAgentIndex = (previousAgentIndex + 1) % agents.length;
@@ -171,12 +180,8 @@ export function advanceAutonomousNegotiation(
   if (rejected) {
     return { turn, round, outcome: buildImpasse(scenario, agents, nextTurns), deadlock: { ...detected, isDeadlocked: true, resolution: 'breakdown' } };
   }
-  if (detected.isDeadlocked) {
-    if (detected.resolution === 'breakdown') {
-      return { turn, round, outcome: buildImpasse(scenario, agents, nextTurns), deadlock: detected };
-    }
-    const intervention = buildDeadlockResolutionTurn(scenario, turns, round, detected);
-    return { turn: intervention, round, outcome: null, deadlock: detected };
+  if (detected.isDeadlocked && detected.resolution === 'breakdown') {
+    return { turn, round, outcome: buildImpasse(scenario, agents, nextTurns), deadlock: detected };
   }
   return { turn, round, outcome: null, deadlock: detected };
 }

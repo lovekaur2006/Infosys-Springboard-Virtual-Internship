@@ -49,7 +49,7 @@ import {
   generateAIResponseToUserInput,
 } from '../services/negotiationEngine.ts';
 import { evaluateCounteroffer, getRoleConcessionHistory } from '../services/counterofferEvaluation.ts';
-import { advanceAutonomousNegotiation } from '../services/autonomousNegotiation.ts';
+import { advanceAutonomousNegotiation, buildImpasse } from '../services/autonomousNegotiation.ts';
 import { detectDeadlock, deadlockResolutionText } from '../services/deadlockDetector.ts';
 import { saveNegotiation } from '../services/apiService';
 
@@ -99,6 +99,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUp = useRef(false);
+  const prevScrollTopRef = useRef(0);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
 
   const userAgent = agents[userAgentIdx] || agents[0];
@@ -140,10 +141,16 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   const handleChatScroll = () => {
     const el = chatContainerRef.current;
     if (!el) return;
-    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    const scrolledUp = distanceToBottom > 80;
-    isUserScrolledUp.current = scrolledUp;
-    setShowScrollBottomBtn(scrolledUp);
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+    if (distanceToBottom <= 80) {
+      isUserScrolledUp.current = false;
+      setShowScrollBottomBtn(false);
+    } else if (scrollTop < prevScrollTopRef.current) {
+      isUserScrolledUp.current = true;
+      setShowScrollBottomBtn(true);
+    }
+    prevScrollTopRef.current = scrollTop;
   };
 
   // Initialize opening turn when mounted
@@ -232,6 +239,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
 
     const updatedTurns = [...turns, userTurn];
     setTurns(updatedTurns);
+    scrollToBottom('smooth');
     setUserInputText('');
     setCustomPriceTerm('');
     setCustomDurationTerm('');
@@ -256,6 +264,12 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
 
       // Advance round if both have spoken
       if (currentRound >= scenario.orchestrator.maxRounds) {
+        if (aiTurn.decision === 'reject' || status.resolution === 'breakdown') {
+          setSettlement(buildImpasse(scenario, agents, [...updatedTurns, aiTurn]));
+        } else {
+          setSettlement(generateSettlementSummary(scenario, agents));
+        }
+      } else if (aiTurn.decision === 'accept') {
         setSettlement(generateSettlementSummary(scenario, agents));
       } else {
         setCurrentRound((prev) => prev + 1);
