@@ -33,7 +33,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
         return <Building2 className="w-5 h-5 text-teal-700 dark:text-teal-500" />;
       case 'job-offer':
         return <Briefcase className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
-      case 'budget-allocation':
+      case 'project-negotiation':
         return <Coins className="w-5 h-5 text-purple-600 dark:text-purple-400" />;
       default:
         return <Layers className="w-5 h-5 text-teal-800 dark:text-indigo-400" />;

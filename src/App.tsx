@@ -45,6 +45,11 @@ import { CalendarScheduleModal } from './components/CalendarScheduleModal.tsx';
 import { CalendarConfirmModal } from './components/CalendarConfirmModal.tsx';
 import { CalendarEventListModal } from './components/CalendarEventListModal.tsx';
 import { LoginScreen } from './components/LoginScreen.tsx';
+import {
+  detectJobProfile,
+  generateJobOfferConfig,
+  JobRoleProfile,
+} from './services/jobProfileDetector.ts';
 
 const DEFAULT_JOB_ROLE = 'Software Engineer';
 const DEFAULT_JOB_LEVEL = 'Senior';
@@ -83,6 +88,9 @@ export default function App() {
   );
   const [jobRole, setJobRole] = useState(DEFAULT_JOB_ROLE);
   const [jobLevel, setJobLevel] = useState(DEFAULT_JOB_LEVEL);
+  const [detectedJobProfile, setDetectedJobProfile] = useState<JobRoleProfile | null>(() =>
+    detectJobProfile({ role: DEFAULT_JOB_ROLE, level: DEFAULT_JOB_LEVEL })
+  );
 
   // Active View Tab
   const [activeTab, setActiveTab] = useState<NavTab>('home');
@@ -140,29 +148,54 @@ export default function App() {
   const handleSelectScenario = (scenario: ScenarioTemplate) => {
     setScheduledCalendarEvent(null);
     if (scenario.id === 'job-offer') {
-      setJobRole(DEFAULT_JOB_ROLE);
-      setJobLevel(DEFAULT_JOB_LEVEL);
+      const initialRole = jobRole || DEFAULT_JOB_ROLE;
+      const initialLevel = jobLevel || DEFAULT_JOB_LEVEL;
+      setJobRole(initialRole);
+      setJobLevel(initialLevel);
+      const profile = detectJobProfile({ role: initialRole, level: initialLevel });
+      setDetectedJobProfile(profile);
+      const { scenario: nextScenario, agents: nextAgents } = generateJobOfferConfig(
+        scenario,
+        scenario.defaultAgents,
+        profile
+      );
+      setSelectedScenario(nextScenario);
+      setConfiguredAgents(nextAgents);
+    } else {
+      setSelectedScenario(scenario);
+      setConfiguredAgents(JSON.parse(JSON.stringify(scenario.defaultAgents)));
     }
-    const nextScenario = scenario.id === 'job-offer'
-      ? withJobProfile(scenario, DEFAULT_JOB_ROLE, DEFAULT_JOB_LEVEL)
-      : scenario;
-    setSelectedScenario(nextScenario);
-    setConfiguredAgents(JSON.parse(JSON.stringify(nextScenario.defaultAgents)));
     showToast('info', `Loaded "${scenario.title}" with ${scenario.defaultAgents.length} agents.`);
   };
 
   const handleUpdateJobRole = (role: string, level: string) => {
     setJobRole(role);
     setJobLevel(level);
-    const nextScenario = withJobProfile(selectedScenario, role, level);
+    const profile = detectJobProfile({ role, level });
+    setDetectedJobProfile(profile);
+    const { scenario: nextScenario, agents: nextAgents } = generateJobOfferConfig(
+      selectedScenario,
+      configuredAgents,
+      profile
+    );
     setSelectedScenario(nextScenario);
-    setConfiguredAgents((previous) => previous.map((agent) => agent.id === 'candidate-ai-lead'
-      ? {
-          ...agent,
-          roleTitle: `${level} ${role}`,
-          roleDescription: `Negotiates an offer for a ${level} ${role} position, weighing compensation, career growth, benefits, and work flexibility.`,
-        }
-      : agent));
+    setConfiguredAgents(nextAgents);
+    showToast('info', `AI detected ${profile.fullTitle}: Automatically calibrated candidate expectations & recruiter budget band.`);
+  };
+
+  const handleAutoDetectJobProfile = (query: string) => {
+    const profile = detectJobProfile(query);
+    setJobRole(profile.role);
+    setJobLevel(profile.level);
+    setDetectedJobProfile(profile);
+    const { scenario: nextScenario, agents: nextAgents } = generateJobOfferConfig(
+      selectedScenario,
+      configuredAgents,
+      profile
+    );
+    setSelectedScenario(nextScenario);
+    setConfiguredAgents(nextAgents);
+    showToast('success', `✨ AI detected ${profile.fullTitle}: Automatically updated candidate & recruiter configurations.`);
   };
 
   // Modify personality for an agent
@@ -456,6 +489,8 @@ export default function App() {
               jobRole={jobRole}
               jobLevel={jobLevel}
               onUpdateJobRole={handleUpdateJobRole}
+              detectedJobProfile={detectedJobProfile}
+              onAutoDetectJobProfile={handleAutoDetectJobProfile}
               validation={validation}
               onUpdatePersonality={handleUpdatePersonality}
               onUpdateGoal={handleUpdateGoal}

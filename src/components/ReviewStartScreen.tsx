@@ -42,7 +42,7 @@ export const ReviewStartScreen: React.FC<ReviewStartScreenProps> = ({
         return <Building2 className="w-5 h-5 text-teal-700" />;
       case 'job-offer':
         return <Briefcase className="w-5 h-5 text-purple-600" />;
-      case 'budget-allocation':
+      case 'project-negotiation':
       default:
         return <Coins className="w-5 h-5 text-emerald-600" />;
     }

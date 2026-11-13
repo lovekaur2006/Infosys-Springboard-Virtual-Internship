@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { AgentConfig, PersonalityType, ScenarioTemplate, ValidationResult } from '../types.ts';
 import { PERSONALITY_DEFINITIONS } from '../data/scenarios.ts';
+import { JobRoleProfile } from '../services/jobProfileDetector.ts';
 
 interface AgentConfigurationScreenProps {
   scenario: ScenarioTemplate;
@@ -31,6 +32,8 @@ interface AgentConfigurationScreenProps {
   jobRole: string;
   jobLevel: string;
   onUpdateJobRole: (role: string, level: string) => void;
+  detectedJobProfile?: JobRoleProfile | null;
+  onAutoDetectJobProfile?: (query: string) => void;
   validation: ValidationResult;
   onUpdatePersonality: (agentId: string, personality: PersonalityType) => void;
   onUpdateGoal: (agentId: string, goal: string, metric: string) => void;
@@ -46,6 +49,8 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
   jobRole,
   jobLevel,
   onUpdateJobRole,
+  detectedJobProfile,
+  onAutoDetectJobProfile,
   validation,
   onUpdatePersonality,
   onUpdateGoal,
@@ -58,6 +63,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
   const [tempGoal, setTempGoal] = useState('');
   const [newConstraintAgentId, setNewConstraintAgentId] = useState<string | null>(null);
   const [newConstraintText, setNewConstraintText] = useState('');
+  const [customRoleInput, setCustomRoleInput] = useState('');
 
   const getAgentTheme = (agent: AgentConfig, index: number) => {
     if (index === 0) {
@@ -86,7 +92,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
       case 'Risk-Averse':
         return 'Prefers stability, avoids unnecessary risks, and makes cautious concessions.';
       case 'Aggressive':
-        return 'Starts with strong demands, makes smaller concessions, pressures for better terms.';
+        return 'Negotiates firmly on key priorities with disciplined concessions while maintaining professional collaboration.';
       case 'Collaborative':
         return 'Focuses on mutual value creation, flexible bundling, and win-win trade-offs.';
     }
@@ -126,18 +132,69 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
       </div>
 
       {scenario.id === 'job-offer' && (
-        <section className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5 sm:p-6">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-base font-bold text-slate-900">Job offer role profile</h2>
-            <p className="text-xs leading-relaxed text-slate-600">Choose the position and career level. The candidate role and negotiation context update to match.</p>
+        <section className="rounded-3xl border border-indigo-100 bg-linear-to-br from-indigo-50/80 via-white to-purple-50/60 p-5 sm:p-7 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100/70">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200 mb-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+                <span>AI Job Profile Detection & Auto-Configuration</span>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">Job Offer Role Profile</h2>
+              <p className="text-xs leading-relaxed text-slate-600 max-w-2xl mt-0.5">
+                Select or describe any position. AI automatically detects the profile and configures candidate priorities, market salary benchmarks, recruiter budget bands, and constraints.
+              </p>
+            </div>
+            {detectedJobProfile && (
+              <div className="flex items-center gap-2 self-start sm:self-auto px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>AI Auto-Configured</span>
+              </div>
+            )}
           </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+          {/* AI Free-Text Detection Bar */}
+          <div className="rounded-2xl border border-indigo-100 bg-white p-3 sm:p-4 shadow-2xs">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+              Natural Language Role Detection
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={customRoleInput}
+                onChange={(e) => setCustomRoleInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && customRoleInput.trim() && onAutoDetectJobProfile) {
+                    e.preventDefault();
+                    onAutoDetectJobProfile(customRoleInput.trim());
+                  }
+                }}
+                placeholder="Type or paste any role, e.g., 'Lead AI Research Scientist' or 'Junior Social Media Manager'..."
+                className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (customRoleInput.trim() && onAutoDetectJobProfile) {
+                    onAutoDetectJobProfile(customRoleInput.trim());
+                  }
+                }}
+                disabled={!customRoleInput.trim()}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shadow-xs shrink-0"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Detect & Auto-Configure</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Structured Dropdown Selectors */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="text-xs font-semibold text-slate-700">
               Job role
               <select
                 value={jobRole}
                 onChange={(event) => onUpdateJobRole(event.target.value, jobLevel)}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
               >
                 {['Software Engineer', 'Data Scientist', 'Product Manager', 'UX/UI Designer', 'Cybersecurity Analyst', 'Marketing Manager', 'Sales Executive', 'HR Specialist', 'Finance Analyst', 'Operations Manager', 'Customer Support Specialist'].map((role) => (
                   <option key={role} value={role}>{role}</option>
@@ -149,7 +206,7 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
               <select
                 value={jobLevel}
                 onChange={(event) => onUpdateJobRole(jobRole, event.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
               >
                 {['Intern', 'Entry-level', 'Mid-level', 'Senior', 'Lead / Principal', 'Manager', 'Director', 'Vice President', 'Executive / C-suite'].map((level) => (
                   <option key={level} value={level}>{level}</option>
@@ -157,9 +214,61 @@ export const AgentConfigurationScreen: React.FC<AgentConfigurationScreenProps> =
               </select>
             </label>
           </div>
-          <div className="mt-3 rounded-xl border border-indigo-100 bg-white/80 px-3.5 py-2.5 text-xs text-slate-600">
-            Candidate role: <strong className="text-slate-900">{jobLevel} {jobRole}</strong>
-          </div>
+
+          {/* AI Detection Summary Card */}
+          {detectedJobProfile && (
+            <div className="rounded-2xl border border-indigo-100/80 bg-white/95 p-4 sm:p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    Live AI Calibration: {detectedJobProfile.fullTitle}
+                  </span>
+                </div>
+                <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                  {detectedJobProfile.department}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Candidate Target / Floor</div>
+                  <div className="text-xs font-bold text-slate-900 mt-1">
+                    ₹{detectedJobProfile.benchmarks.candidateTarget.toLocaleString('en-IN')}
+                    <span className="text-[11px] font-medium text-slate-500 ml-1.5">
+                      (Floor: ₹{detectedJobProfile.benchmarks.candidateFloor.toLocaleString('en-IN')})
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recruiter Budget Band</div>
+                  <div className="text-xs font-bold text-slate-900 mt-1">
+                    ₹{detectedJobProfile.benchmarks.recruiterMin.toLocaleString('en-IN')} - ₹{detectedJobProfile.benchmarks.recruiterMax.toLocaleString('en-IN')}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Signing Bonus & Equity</div>
+                  <div className="text-xs font-bold text-slate-900 mt-1">
+                    ₹{detectedJobProfile.benchmarks.signingBonus.toLocaleString('en-IN')} upfront
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 text-[11px] text-slate-600">
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" /> Candidate compensation floor calibrated
+                </span>
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" /> Recruiter budget ceiling enforced
+                </span>
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" /> Domain-specific perks & constraints added
+                </span>
+              </div>
+            </div>
+          )}
         </section>
       )}
 

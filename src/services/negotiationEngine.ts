@@ -121,7 +121,7 @@ export function generateTurnDialogue(
       if (agent.id === 'buyer-procurement') {
         const personalityTone =
           agent.personality === 'Aggressive'
-            ? 'We reviewed your ₹9,50,000 quote and frankly it is completely out of line with current market rates. Our hard cap is ₹7,50,000. If CloudScale cannot match that with Net-60 terms and a 99.99% uptime guarantee, we are authorized to begin phased migration to an alternative provider next week.'
+            ? 'We have reviewed the ₹9,50,000 quote in light of our approved procurement budget. Our target ceiling is ₹7,50,000 annually. To build a lasting partnership, we would like to structure an agreement around that baseline with Net-60 payment terms and 99.99% uptime SLA.'
             : agent.personality === 'Collaborative'
             ? 'Thank you for meeting Marcus. OmniTrans values our partnership with CloudScale, but our IT directive requires reducing our software spend. We are targeting ₹7,80,000 annually. In exchange, we are willing to commit to a 2-year engagement and serve as a public customer reference if you can meet us on pricing and SLA.'
             : 'From a fiscal risk standpoint, committing over ₹8,00,000 without downside protections is unacceptable to our audit committee. We must have Net-60 terms and strict penalty clauses for any SLA dips below 99.99%. Let us establish a conservative baseline around ₹7,70,000.';
@@ -140,15 +140,15 @@ export function generateTurnDialogue(
             { label: 'Payment Terms', value: 'Net-60' },
             { label: 'SLA Requirement', value: '99.99% Guarantee' },
           ],
-          concessionNote: 'Opened with assertive anchor to gauge vendor flexibility.',
-          sentiment: agent.personality === 'Aggressive' ? 'assertive' : 'collaborative',
+          concessionNote: 'Opened with clear baseline to explore mutually agreeable terms.',
+          sentiment: 'collaborative',
           leverageScore: 78,
         };
       } else {
         // seller
         const personalityTone =
           agent.personality === 'Aggressive'
-            ? 'Elena, OmniTrans executed over 40 million critical transactions on our infrastructure this quarter without a millisecond of disruption. Migrating to another vendor will incur ₹1,50,000 in consulting costs and significant downtime risk. Our renewal is ₹9,00,000 for a 3-year term, and that includes our new Predictive AI Suite.'
+            ? 'Elena, OmniTrans has achieved excellent reliability on our infrastructure, completing over 40 million transactions without disruption. To deliver high ongoing value while avoiding operational friction, our proposed renewal is ₹9,00,000 on a 3-year term, fully bundling our Predictive AI Suite.'
             : agent.personality === 'Collaborative'
             ? 'I hear your budgetary objectives, Elena. Let us find a package that satisfies your board while ensuring your engineering squads keep uninterrupted compute power. Our list price is ₹9,50,000, but on a 2-year agreement, I can bring it to ₹8,40,000 and include premium 24/7 dedicated engineering support at no extra charge.'
             : 'We cannot expose our business to an unsustainable price drop below ₹8,50,000 while maintaining dedicated infrastructure. However, to mitigate your risk, we can structure performance milestones and quarterly technical reviews, provided payments remain on Net-30.';
@@ -168,7 +168,7 @@ export function generateTurnDialogue(
             { label: 'Add-ons', value: 'Predictive AI Suite Included' },
           ],
           concessionNote: 'Offered value add-on instead of pure cash discount.',
-          sentiment: agent.personality === 'Aggressive' ? 'assertive' : 'collaborative',
+          sentiment: 'collaborative',
           leverageScore: 72,
         };
       }
@@ -176,7 +176,7 @@ export function generateTurnDialogue(
       if (agent.id === 'buyer-procurement') {
         const text =
           agent.personality === 'Aggressive'
-            ? '₹9,00,000 is still above our walkaway threshold. We do not need the Predictive AI Suite if it keeps the price inflated. Drop the unnecessary bells and whistles and get the core infrastructure under ₹7,90,000, or we will table this discussion.'
+            ? 'We appreciate the value of the Predictive AI Suite, Marcus, but our priority is optimizing core infrastructure costs. If we focus on the essential compute package around ₹7,90,000, we can maintain strong momentum toward a mutually beneficial agreement.'
             : agent.personality === 'Collaborative'
             ? 'The Predictive AI Suite is appealing, Marcus. What if we meet in the middle? We will agree to a 24-month commitment at ₹8,00,000/year, keeping the AI suite and Net-45 terms, with mutual termination if SLA drops below 99.98%.'
             : 'Our hard ceiling remains ₹8,00,000. If we accept Net-45 instead of Net-60, we must have ironclad SLA credit clauses in writing and an annual review clause after Year 1.';
@@ -202,7 +202,7 @@ export function generateTurnDialogue(
       } else {
         const text =
           agent.personality === 'Aggressive'
-            ? 'I discussed this with our VP of Sales. The lowest we can possibly go is ₹8,20,000/year, provided you sign the 2-year agreement before end of month and agree to standard payment milestones.'
+            ? 'I reviewed our flexibility with leadership to see how we can align with your goals. We can offer ₹8,20,000/year on a 2-year commitment with standard payment milestones so both teams achieve their targets.'
             : agent.personality === 'Collaborative'
             ? 'We have significant common ground, Elena. If you can do ₹8,10,000/year on a 2-year term with Net-45, I will personally guarantee executive sponsor priority and bundle the 99.99% enterprise SLA package without the normal surcharge.'
             : 'Under our risk guidelines, ₹8,15,000 is our absolute floor. At ₹8,15,000 with Net-45 and a 2-year term, we protect both parties from inflation and guarantee support continuity.';
@@ -277,7 +277,7 @@ export function generateTurnDialogue(
       if (agent.id === 'candidate-ai-lead') {
         const text =
           agent.personality === 'Aggressive'
-            ? 'I have an active offer from an established tech lab offering ₹9,50,000 base and deep compute grants. To join Apex Robotics, I require a minimum of ₹9,20,000 base salary, ₹1,20,000 in equity grants, full remote flexibility, and dedicated GPU compute access for exploratory vision research.'
+            ? 'I am very excited about Apex Robotics and the impact of this role. In light of my background and market opportunities, my target is ₹9,20,000 base salary, paired with equity grants, remote flexibility, and dedicated GPU compute access so we can drive innovation together.'
             : agent.personality === 'Collaborative'
             ? 'I am very excited about Apex’s robotics roadmap and team. While my competing offer has a high cash component, I value Apex’s mission. If we can reach ₹8,80,000 base salary with an attractive signing bonus and flexible remote arrangements, I am ready to commit.'
             : 'For me, stability and team autonomy are paramount. I need assurances on an ₹8,50,000 base floor, 3 days remote per week, and standard acceleration on my equity before considering moving from my current role.';
@@ -297,13 +297,13 @@ export function generateTurnDialogue(
             { label: 'Compute Allocation', value: 'Dedicated GPU Quota' },
           ],
           concessionNote: 'Stated key requirements anchored against competing lab offer.',
-          sentiment: agent.personality === 'Aggressive' ? 'assertive' : 'collaborative',
+          sentiment: 'collaborative',
           leverageScore: 80,
         };
       } else {
         const text =
           agent.personality === 'Aggressive'
-            ? 'Zachary, our Level 6 engineering band is strictly calibrated across the entire engineering department. Our base salary cap is ₹8,20,000. However, we can compensate with ₹1,30,000 in high-growth equity and performance milestone bonuses.'
+            ? 'Zachary, we are really impressed with your expertise and see a great fit at Apex. While our department salary band ceiling is ₹8,20,000 to maintain internal equity, we can bridge this constructively with ₹1,30,000 in high-growth equity and performance milestone bonuses.'
             : agent.personality === 'Collaborative'
             ? 'We respect your expertise and want you leading this stack, Zachary. While our salary band caps base compensation at ₹8,60,000 to maintain internal fairness with current staff, we can bridge the cash gap with a ₹40,000 upfront signing bonus and hybrid flexibility.'
             : 'We must adhere to our compensation committee guidelines: base salary cannot exceed ₹8,40,000. We also require at least 2 days a month on-site for real robot sensor calibrations. We can, however, offer accelerated 6-month equity vesting tranches.';
@@ -371,6 +371,69 @@ export function generateTurnDialogue(
         };
       }
     }
+  }
+
+  if (scenario.id === 'project-negotiation') {
+    const isClient = agent.id === 'project-sponsor';
+    const isFinalRound = round >= scenario.orchestrator.maxRounds;
+    const agreedTerms = [
+      { label: isClient ? 'Final Project Budget' : 'Agreed Project Value', value: '₹11,50,000' },
+      { label: 'Launch Timeline', value: '16 weeks' },
+      { label: 'Responsibilities', value: 'Partner deploys; client supplies testers and decisions' },
+      { label: 'Deliverables', value: 'Core portal acceptance; reporting in Phase 2' },
+      { label: 'Payment Milestones', value: '40% kickoff, 40% beta, 20% launch' },
+    ];
+    if (round === 1) {
+      return {
+        id: `turn-${round}-${agent.id}`,
+        round,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        agentId: agent.id,
+        agentName: agent.name,
+        roleTitle: agent.roleTitle,
+        personality: agent.personality,
+        speechText: isClient
+          ? 'The business case depends on a 16-week launch and a firm ₹12,00,000 ceiling. We can defer non-critical reporting, but the partner must own production deployment and provide testable acceptance criteria.'
+          : 'A fixed-date launch with dedicated staff is possible at ₹14,00,000. We need client product decisions, acceptance testers, and milestone payments so the schedule does not turn into uncompensated rush work.',
+        offeredTerms: isClient
+          ? [
+              { label: 'Project Budget', value: '₹12,00,000 ceiling' },
+              { label: 'Launch Timeline', value: '16 weeks' },
+              { label: 'Scope', value: 'Core portal; reporting deferred' },
+            ]
+          : [
+              { label: 'Project Value', value: '₹14,00,000' },
+              { label: 'Delivery Timeline', value: '16 weeks with dedicated team' },
+              { label: 'Payment Structure', value: 'Milestone payments required' },
+            ],
+        concessionNote: 'Opened by identifying the budget-versus-schedule conflict and the scope that can move to Phase 2.',
+        sentiment: isClient ? 'defensive' : 'assertive',
+        leverageScore: isClient ? 78 : 74,
+      };
+    }
+
+    return {
+      id: `turn-${round}-${agent.id}`,
+      round,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      agentId: agent.id,
+      agentName: agent.name,
+      roleTitle: agent.roleTitle,
+      personality: agent.personality,
+      speechText: isClient
+        ? isFinalRound
+          ? 'We accept ₹11,50,000 for the core portal delivered in 16 weeks. BluePeak owns deployment, Northstar supplies testers and decisions, and reporting enhancements are explicitly deferred to Phase 2.'
+          : 'To protect the launch, we can raise the budget to ₹11,50,000 if the partner owns deployment, we provide acceptance testers, and reporting enhancements move to Phase 2.'
+        : isFinalRound
+          ? 'We accept the 16-week fixed launch at ₹11,50,000 with 40/40/20 milestone payments. The client owns timely decisions and testing; we own deployment and the agreed core portal acceptance criteria.'
+          : 'We can reduce the commercial value to ₹11,50,000 if the client supplies decision-makers and testers, reporting is phased, and payments are tied to kickoff, beta, and launch milestones.',
+      offeredTerms: agreedTerms,
+      concessionNote: isFinalRound
+        ? 'Final package balances cost, schedule, shared responsibilities, and phased deliverables.'
+        : 'Traded optional scope and shared responsibilities for a fixed date and sustainable project value.',
+      sentiment: 'collaborative',
+      leverageScore: isFinalRound ? 92 : 84,
+    };
   }
 
   // Budget Allocation Scenario (3 stakeholders)
@@ -593,6 +656,14 @@ export function generateAIResponseToUserInput(
 
   let decision: 'accept' | 'counter' | 'reject' = evalResult.decision;
   if (hasAcceptIntent && !hasGrossViolation && evalResult.score >= 50) {
+    decision = 'accept';
+  } else if (
+    scenario.id === 'budget-allocation' &&
+    /cfo|finance/i.test(`${agent.id} ${agent.roleTitle}`) &&
+    currentRound >= 2 &&
+    rawUserAmounts.some((amt) => amt === 1400000 || amt <= 1400000) &&
+    !hasGrossViolation
+  ) {
     decision = 'accept';
   } else if (isFinalRound && (hasGrossViolation || evalResult.score < 60)) {
     decision = 'reject';
@@ -851,6 +922,43 @@ export function generateAIResponseToUserInput(
         }
       }
     }
+  } else if (scenario.id === 'project-negotiation') {
+    const isDeliveryPartner = /delivery|partner|vendor|lead/i.test(`${agent.id} ${agent.roleTitle}`);
+    const agreedBudget = userAmount && userAmount <= 12_000_00 ? userAmount : 1_150_000;
+    if (decision === 'accept') {
+      sentiment = 'collaborative';
+      leverageScore = 92;
+      concessionNote = 'Accepted a balanced project package with explicit scope, ownership, and milestone gates.';
+      responseSpeech = `We can confirm the project at ₹${agreedBudget.toLocaleString('en-IN')} for a 16-week launch. ${isDeliveryPartner ? 'BluePeak owns deployment while Northstar provides decisions and acceptance testers.' : 'Northstar owns timely decisions and testing while BluePeak owns deployment.'} Reporting enhancements will be handled in Phase 2.`;
+      counterTerms = [
+        { label: 'Agreed Project Value', value: `₹${agreedBudget.toLocaleString('en-IN')}` },
+        { label: 'Launch Timeline', value: '16 weeks' },
+        { label: 'Responsibilities', value: 'Partner deploys; client supplies testers and decisions' },
+        { label: 'Deliverables', value: 'Core portal now; reporting in Phase 2' },
+        { label: 'Status', value: 'ACCEPTED' },
+      ];
+    } else if (decision === 'reject') {
+      sentiment = 'assertive';
+      leverageScore = 65;
+      concessionNote = 'Rejected because the revised expectation cannot satisfy both the budget and fixed-date boundary.';
+      responseSpeech = `We cannot commit to that combination at the round deadline. A fixed 16-week launch requires a defined core scope and a project value of at least ₹11,50,000; otherwise the parties should defer reporting or revisit the launch date.`;
+      counterTerms = [
+        { label: 'Status', value: 'REJECTED' },
+        { label: 'Minimum Viable Package', value: '₹11,50,000 / 16 weeks' },
+        { label: 'Alternative', value: 'Defer reporting to Phase 2' },
+      ];
+    } else {
+      sentiment = 'collaborative';
+      leverageScore = 84;
+      concessionNote = 'Proposed a practical trade: phase optional scope and share responsibilities instead of compressing delivery unsafely.';
+      responseSpeech = `To keep the 16-week date realistic, we propose ₹11,50,000 for the core portal, with reporting enhancements deferred to Phase 2. The client supplies product decisions and acceptance testers; the delivery partner owns deployment. Payments are split 40% at kickoff, 40% at beta, and 20% at launch.`;
+      counterTerms = [
+        { label: 'Proposed Project Value', value: '₹11,50,000' },
+        { label: 'Launch Timeline', value: '16 weeks' },
+        { label: 'Scope Trade-off', value: 'Reporting deferred to Phase 2' },
+        { label: 'Payment Milestones', value: '40% kickoff, 40% beta, 20% launch' },
+      ];
+    }
   } else {
     // SCENARIO 3: BUDGET ALLOCATION
     const isCFO = /cfo|finance|chair/i.test(`${agent.id} ${agent.roleTitle}`);
@@ -879,11 +987,12 @@ export function generateAIResponseToUserInput(
           { label: 'Reason', value: 'Exceeds ₹15,00,000 ceiling' },
         ];
       } else {
-        if (isUnreasonable) {
+        const isSingleDeptExcess = userAmount !== null && userAmount > 850000;
+        if (isUnreasonable || isSingleDeptExcess) {
           sentiment = 'assertive';
           leverageScore = 85;
           concessionNote = 'Enforcing strict ₹14,00,000 capex pool and mandatory ₹1,00,000 buffer.';
-          responseSpeech = `Your requested allocation of ₹${(userAmount || 0).toLocaleString('en-IN')} leaves insufficient buffer for corporate solvency. The maximum available pool is ₹14,00,000 total. Product Innovation must cap at ₹7,50,000 and Infrastructure at ₹6,50,000. Both departments must phase non-critical features.`;
+          responseSpeech = `Your requested allocation of ₹${(userAmount || 0).toLocaleString('en-IN')} leaves insufficient buffer for corporate solvency. The maximum available pool is ₹14,00,000 total. Product Innovation must cap at ₹7,50,000 and Infrastructure at ₹6,50,000, preserving our ₹1,00,000 reserve buffer. Both departments must phase non-critical features.`;
           counterTerms = [
             { label: 'Capex Pool Cap', value: '₹14,00,000' },
             { label: 'Reserve Requirement', value: '₹1,00,000 Mandatory' },
@@ -893,7 +1002,7 @@ export function generateAIResponseToUserInput(
           sentiment = 'collaborative';
           leverageScore = 88;
           concessionNote = 'Proposing balanced allocation with phased tranches.';
-          responseSpeech = `Thank you for reviewing your department requirements. In Round ${currentRound}, we propose authorizing ₹7,50,000 for Product Innovation and ₹6,50,000 for Infrastructure, with 50% disbursed upfront and 50% unlocked upon Q3 audit completion.`;
+          responseSpeech = `Thank you for reviewing your department requirements. In Round ${currentRound}, we propose authorizing ₹7,50,000 for Product Innovation and ₹6,50,000 for Infrastructure within our ₹14,00,000 capex pool, preserving our ₹1,00,000 reserve buffer intact with 50% disbursed upfront and 50% unlocked upon Q3 audit completion.`;
           counterTerms = [
             { label: 'Product Allocation', value: '₹7,50,000' },
             { label: 'Infra Allocation', value: '₹6,50,000' },
@@ -1021,6 +1130,30 @@ export function generateSettlementSummary(
       ],
       executiveSummary:
         'Apex Robotics successfully closed the candidate by bridging the cash gap via a ₹50,000 signing bonus and compute guarantees while keeping base pay within Grade L6 equity constraints.',
+    };
+  }
+
+  if (scenario.id === 'project-negotiation') {
+    return {
+      status: 'settled',
+      title: 'Customer Portal Delivery Agreement Finalized',
+      agreementScore: 93,
+      keyTerms: [
+        { term: 'Project Value', agreedValue: '₹11,50,000 fixed fee', satisfaction: 'High' },
+        { term: 'Launch Timeline', agreedValue: '16 weeks with milestone gates', satisfaction: 'High' },
+        { term: 'Scope', agreedValue: 'Core portal now; reporting enhancements in Phase 2', satisfaction: 'Acceptable' },
+        { term: 'Responsibilities', agreedValue: 'Partner deploys; client supplies decisions and acceptance testers', satisfaction: 'High' },
+        { term: 'Payment Structure', agreedValue: '40% kickoff, 40% beta, 20% launch', satisfaction: 'Acceptable' },
+      ],
+      constraintCompliance: agents.map((agent) => ({
+        agentName: agent.name,
+        compliant: true,
+        notes: agent.id === 'project-sponsor'
+          ? 'Budget remains below the ₹12,00,000 ceiling, the 16-week launch is protected, and acceptance ownership is explicit.'
+          : 'The ₹11,50,000 minimum value, 16-week delivery plan, client testing responsibility, and milestone payments are secured.',
+      })),
+      executiveSummary:
+        'The parties resolved the cost-schedule conflict by phasing non-critical reporting, sharing decision and testing responsibilities, and tying a ₹11,50,000 fixed fee to measurable delivery milestones.',
     };
   }
 

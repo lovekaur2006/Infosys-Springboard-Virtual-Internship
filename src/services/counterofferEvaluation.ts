@@ -821,7 +821,7 @@ export function evaluateCounteroffer(
     nextMove = 'All objectives and redline constraints are satisfied. Proceed to finalize agreement and schedule review.';
   } else if (decisionResult.decision === 'reject') {
     nextMove = agent.personality === 'Aggressive'
-      ? 'Declare walkaway stance. The current terms violate non-negotiable boundaries.'
+      ? 'Clearly and politely restate non-negotiable boundaries, explaining the operational constraints.'
       : 'Explain the violated constraint clearly and request a revised baseline or end negotiations.';
   } else {
     // Counter

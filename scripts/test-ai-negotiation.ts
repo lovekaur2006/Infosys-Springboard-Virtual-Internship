@@ -7,6 +7,7 @@ const expectedOffers: Record<string, RegExp> = {
   'vendor-pricing': /price|payment|SLA|support|ARR|deal status/i,
   'job-offer': /salary|base|bonus|work|remote|offer status|equity/i,
   'budget-allocation': /budget|allocation|SOC|reserve|phase/i,
+  'project-negotiation': /budget|value|timeline|week|responsib|deliverable|milestone|phase/i,
 };
 const firstAmount = (turn: { offeredTerms?: { label: string; value: string }[] } | undefined, label: RegExp) => {
   const term = turn?.offeredTerms?.find((item) => label.test(item.label));
@@ -46,6 +47,10 @@ for (const scenario of PREBUILT_SCENARIOS) {
   } else if (scenario.id === 'job-offer') {
     const candidateTurns = turns.filter((turn) => turn.agentId === 'candidate-ai-lead');
     assert.ok((firstAmount(candidateTurns[1], /base/i) || 0) < (firstAmount(candidateTurns[0], /base/i) || 0), 'Candidate should make a measured base-salary concession.');
+  } else if (scenario.id === 'project-negotiation') {
+    const clientTurns = turns.filter((turn) => turn.agentId === 'project-sponsor');
+    assert.ok((firstAmount(clientTurns[1], /budget|value/i) || 0) < (firstAmount(clientTurns[0], /budget|value/i) || 0), 'Client should trade scope for a lower project value.');
+    assert.ok(turns.some((turn) => turn.offeredTerms?.some((term) => /responsib|milestone|phase/i.test(term.label))), 'Project agreement should make responsibilities and phased deliverables explicit.');
   } else {
     const allocationRoles: [string, RegExp][] = [['product-lead', /budget/i], ['infra-lead', /budget/i]];
     for (const [agentId, label] of allocationRoles) {

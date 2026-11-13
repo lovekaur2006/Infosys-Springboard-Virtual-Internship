@@ -341,7 +341,6 @@ console.log('\n--- TEST GROUP 3: Project Budget Allocation (Human Product Lead v
     );
 
     assert.equal(aiResponse.agentId, cfo.id, 'AI respondent must be CFO');
-    console.log('DEBUG Test 3.1:', { speech: aiResponse.speechText, terms: aiResponse.offeredTerms, decision: aiResponse.decision });
     assert.equal(aiResponse.decision, 'counter', 'CFO should counter excessive single-department request');
     assert.ok(aiResponse.speechText.includes('14,00,000') || aiResponse.speechText.includes('pool') || aiResponse.speechText.includes('buffer'), 'CFO must cite total capex pool or reserve buffer');
     console.log('✔ Test 3.1 Passed: AI CFO defends aggregate capex ceiling and contingency reserve.');

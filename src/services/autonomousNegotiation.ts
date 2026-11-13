@@ -82,6 +82,16 @@ function roleAcceptsOffer(
     const infraHasCompliance = Boolean(infrastructure?.offeredTerms?.some((term) => /soc|compliance/i.test(`${term.label} ${term.value}`)));
     return productBudget >= 650_000 && infraBudget >= 550_000 && productBudget + infraBudget <= 1_500_000 && productHasPhase && infraHasCompliance;
   }
+
+  if (scenario.id === 'project-negotiation' && round >= 3) {
+    const amount = incoming.offeredTerms?.flatMap((term) =>
+      /price|budget|value|cost|fee/i.test(term.label) ? numericValues([term]) : []
+    )[0];
+    const hasTimeline = incoming.offeredTerms?.some((term) => /week|timeline|launch/i.test(`${term.label} ${term.value}`));
+    const hasOwnership = incoming.offeredTerms?.some((term) => /ownership|responsib|testing|deployment/i.test(`${term.label} ${term.value}`));
+    const hasMilestones = incoming.offeredTerms?.some((term) => /milestone|payment|phase/i.test(`${term.label} ${term.value}`));
+    return Boolean(amount === 1_150_000 && hasTimeline && hasOwnership && hasMilestones);
+  }
   return false;
 }
 
@@ -145,7 +155,9 @@ export function advanceAutonomousNegotiation(
   });
   const accepted = scenario.id === 'budget-allocation'
     ? agent.id === 'cfo-finance' && (roleAcceptsOffer(scenario, agent, round, turns, incoming) || evaluation.decision === 'accept')
-    : roleAcceptsOffer(scenario, agent, round, turns, incoming) || evaluation.decision === 'accept';
+    : scenario.id === 'project-negotiation'
+      ? roleAcceptsOffer(scenario, agent, round, turns, incoming)
+      : roleAcceptsOffer(scenario, agent, round, turns, incoming) || evaluation.decision === 'accept';
   const rejected = !accepted && (evaluation.decision === 'reject' || round >= scenario.orchestrator.maxRounds);
   const generated = generateTurnDialogue(scenario, agents, round, nextAgentIndex, turns);
   const decision: NonNullable<NegotiationTurn['decision']> = accepted ? 'accept' : rejected ? 'reject' : 'counter';

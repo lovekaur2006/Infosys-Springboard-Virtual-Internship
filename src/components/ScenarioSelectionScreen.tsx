@@ -65,7 +65,7 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
           badgeText: 'text-purple-600',
           borderHover: 'hover:border-purple-400',
         };
-      case 'budget-allocation':
+      case 'project-negotiation':
       default:
         return {
           icon: <Users className="w-6 h-6 text-emerald-600" />,
@@ -103,7 +103,7 @@ export const ScenarioSelectionScreen: React.FC<ScenarioSelectionScreenProps> = (
         </div>
       </div>
 
-      {/* 3 Scenario Cards */}
+      {/* Scenario Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {PREBUILT_SCENARIOS.map((scenario) => {
           const isSelected = selectedScenario.id === scenario.id;
