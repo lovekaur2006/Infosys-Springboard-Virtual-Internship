@@ -10,7 +10,12 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "test:ai-negotiation": "tsx scripts/test-ai-negotiation.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:post-summary": "tsx scripts/test-post-summary.ts",
+    "test:analytics": "tsx scripts/test-analytics.ts",
+    "test:e2e": "tsx scripts/test-e2e-matrix.ts",
+    "test:all": "npm run lint && npm run test:ai-negotiation && npm run test:post-summary && npm run test:analytics && npm run test:e2e",
+    "seed:demo": "tsx scripts/seed-sessions.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -39,3 +44,4 @@
     "typescript": "^7.0.2"
   }
 }
+

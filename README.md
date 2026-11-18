@@ -98,3 +98,13 @@ Google sign-in requests identity and Google Calendar access together. It sends t
 - **Interactive Arena & Human-in-the-Loop**: Observe turn-by-turn agent exchanges or step in to make counter-offers directly.
 - **Google Calendar Synchronization**: Automatically schedule confirmed agreement review meetings to your Google Calendar.
 - **Settlement & Compliance Reporting**: Detailed executive summaries and constraint verification matrices upon reaching an agreement.
+- **Post-Interaction Analysis (Milestone 4)**: narrative summary, sentiment journey, resolution quality score and per-agent recommendations after every negotiation.
+- **Performance Analytics Dashboard (Milestone 4)**: multi-session trends, agreement rates, recurring deadlock triggers, personality performance, CSV / report export.
+
+## 🧪 Testing
+
+```bash
+npm run test:all           # lint + AI negotiation + summary + analytics + end-to-end matrix
+npm run test:e2e -- --write-report   # regenerate docs/E2E_TEST_RESULTS.md
+npm run seed:demo -- you@example.com # fill the database with demo sessions for the analytics dashboard
+
