@@ -19,8 +19,12 @@ import {
 import { AgentConfig, ScenarioTemplate, SettlementSummary } from '../types.ts';
 import { generateSettlementSummary } from '../services/negotiationEngine.ts';
 import { CalendarEventPayload } from '../services/calendarService.ts';
+import { FinishedSession } from '../services/postInteractionSummary.ts';
+import { PostInteractionPanel } from './PostInteractionPanel.tsx';
 
 interface ReportsScreenProps {
+  /** Task 5: the negotiation that just finished (null until one completes). */
+  session?: FinishedSession | null;
   scenario: ScenarioTemplate;
   agents: AgentConfig[];
   scheduledEvent: CalendarEventPayload | null;
@@ -30,14 +34,18 @@ interface ReportsScreenProps {
 }
 
 export const ReportsScreen: React.FC<ReportsScreenProps> = ({
-  scenario,
-  agents,
+  session,
+  scenario: scenarioProp,
+  agents: agentsProp,
   scheduledEvent,
   onStartNegotiation,
   onOpenScheduleModal,
   isCalendarConnected,
 }) => {
-  const summary: SettlementSummary = generateSettlementSummary(scenario, agents);
+  // Prefer the real, just-finished session over a regenerated template summary.
+  const scenario = session?.scenario ?? scenarioProp;
+  const agents = session?.agents ?? agentsProp;
+  const summary: SettlementSummary = session?.settlement ?? generateSettlementSummary(scenario, agents);
   const reportDate = new Date().toLocaleDateString(undefined, {
     year: 'numeric', month: 'long', day: 'numeric',
   });
@@ -124,7 +132,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             {summary.status}
           </div>
           <div className="text-xs text-emerald-600 font-semibold mt-1">
-            Agreement reached within allowable zone
+            {summary.status === 'settled' ? 'Agreement reached within allowable zone' : 'No agreement reached within the round limit'}
           </div>
         </div>
 
@@ -199,8 +207,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               <div key={i} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-800">{comp.agentName}</span>
-                  <span className="inline-flex items-center gap-1 font-bold text-[10px] text-emerald-700">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Compliant
+                  <span className={`inline-flex items-center gap-1 font-bold text-[10px] ${comp.compliant ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <CheckCircle2 className={`w-3.5 h-3.5 ${comp.compliant ? 'text-emerald-600' : 'text-rose-600'}`} /> {comp.compliant ? 'Compliant' : 'Not verified'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-600">{comp.notes}</p>
@@ -230,6 +238,15 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           </button>
         </div>
       </div>
+      {/* Task 5: Post-interaction analysis for the negotiation that just finished */}
+      {session ? (
+        <PostInteractionPanel summary={session.summary} />
+      ) : (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500">
+          Finish a negotiation to see its post-interaction analysis here (summary, sentiment journey, resolution score and recommendations).
+        </div>
+      )}
+
       <div className="pn-pdf-footer" aria-hidden="true">
         <span>PARLEYNET / CONFIDENTIAL NEGOTIATION SUMMARY</span>
         <span>PREPARED {reportDate.toUpperCase()}</span>

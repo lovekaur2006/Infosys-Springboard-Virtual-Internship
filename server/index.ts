@@ -47,19 +47,24 @@ app.post('/api/auth/google', async (req: any, res: any) => {
   }
 });
 
-// Save a finished negotiation
+// Save a finished negotiation (Task 5: also stores mode + post-interaction summary)
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 app.post('/api/negotiations', async (req: any, res: any) => {
-  const { userEmail, scenarioId, scenarioTitle, agents, turns, settlement } = req.body ?? {};
+  const { id, userEmail, scenarioId, scenarioTitle, agents, turns, settlement, mode, summary } = req.body ?? {};
   if (!userEmail || !scenarioId || !scenarioTitle || !agents || !turns || !settlement) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  const safeMode = mode === 'auto' || mode === 'interactive' ? mode : null;
+  const clientId = typeof id === 'string' && UUID_RE.test(id) ? id : null;
   try {
     const { rows } = await pool.query(
       `INSERT INTO negotiations
-         (user_email, scenario_id, scenario_title, status, agreement_score, agents, turns, settlement)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         (id, user_email, scenario_id, scenario_title, status, agreement_score, agents, turns, settlement, mode, summary)
+       VALUES (COALESCE($1::uuid, gen_random_uuid()),$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT (id) DO NOTHING
        RETURNING id, created_at`,
       [
+        clientId,
         userEmail,
         scenarioId,
         scenarioTitle,
@@ -68,12 +73,34 @@ app.post('/api/negotiations', async (req: any, res: any) => {
         JSON.stringify(agents),
         JSON.stringify(turns),
         JSON.stringify(settlement),
+        safeMode,
+        summary ? JSON.stringify(summary) : null,
       ]
     );
-    res.status(201).json(rows[0]);
+    // Empty result means this client id was already saved (idempotent retry).
+    res.status(rows[0] ? 201 : 200).json(rows[0] ?? { id: clientId, duplicate: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to save negotiation' });
+  }
+});
+
+// Task 5: sessions for the Performance Analytics dashboard (no transcripts, newest first)
+app.get('/api/analytics/sessions', async (req: any, res: any) => {
+  const email = String(req.query.email || '');
+  if (!email) return res.status(400).json({ error: 'email query param is required' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, scenario_id AS "scenarioId", scenario_title AS "scenarioTitle", status,
+              agreement_score AS "agreementScore", mode, summary, created_at AS "createdAt"
+         FROM negotiations WHERE user_email = $1
+         ORDER BY created_at DESC LIMIT 500`,
+      [email]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load analytics sessions' });
   }
 });
 

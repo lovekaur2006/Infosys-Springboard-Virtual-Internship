@@ -52,6 +52,13 @@ import { evaluateCounteroffer, getRoleConcessionHistory } from '../services/coun
 import { advanceAutonomousNegotiation, buildImpasse } from '../services/autonomousNegotiation.ts';
 import { detectDeadlock, deadlockResolutionText } from '../services/deadlockDetector.ts';
 import { saveNegotiation } from '../services/apiService';
+import {
+  FinishedSession,
+  generatePostInteractionSummary,
+  PostInteractionSummary,
+} from '../services/postInteractionSummary.ts';
+import { newSessionId, saveLocalSession } from '../services/sessionStore.ts';
+import { PostInteractionPanel } from './PostInteractionPanel.tsx';
 
 interface NegotiationArenaProps {
   scenario: ScenarioTemplate;
@@ -60,6 +67,8 @@ interface NegotiationArenaProps {
   onOpenScheduleModal: () => void;
   isCalendarConnected: boolean;
   userEmail?: string | null;
+  /** Task 5: called once with the finished session so Reports can show the real analysis. */
+  onSessionComplete?: (session: FinishedSession) => void;
 }
 
 export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
@@ -69,6 +78,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   onOpenScheduleModal,
   isCalendarConnected,
   userEmail,
+  onSessionComplete,
 }) => {
   // Negotiation Mode: 'interactive' (You vs AI) or 'auto' (AI vs AI)
   const [mode, setMode] = useState<'interactive' | 'auto'>('interactive');
@@ -83,6 +93,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeedMs, setPlaySpeedMs] = useState(2400);
   const [settlement, setSettlement] = useState<SettlementSummary | null>(null);
+  const [postSummary, setPostSummary] = useState<PostInteractionSummary | null>(null);
   const [deadlockStatus, setDeadlockStatus] = useState<DeadlockStatus>(() => ({
     isDeadlocked: false,
     reasons: [],
@@ -162,17 +173,41 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     }
   }, []);
 
-  // Save the finished negotiation to the database
+  // Task 5: on completion build the post-interaction summary, keep a local copy for analytics,
+  // hand the session to the Reports screen and (when signed in) save it to the database.
   useEffect(() => {
-    if (!settlement || !userEmail) return;
-    saveNegotiation({
-      userEmail,
+    if (!settlement) {
+      setPostSummary(null);
+      return;
+    }
+    const summary = generatePostInteractionSummary(scenario, agents, turns, settlement, deadlockStatus, mode);
+    setPostSummary(summary);
+    onSessionComplete?.({ scenario, agents, turns, settlement, summary });
+
+    const id = newSessionId();
+    saveLocalSession({
+      id,
       scenarioId: scenario.id,
       scenarioTitle: scenario.title,
-      agents,
-      turns,
-      settlement: { ...settlement },
+      status: settlement.status,
+      agreementScore: Math.round(settlement.agreementScore ?? 0),
+      mode,
+      createdAt: new Date().toISOString(),
+      summary,
     });
+    if (userEmail) {
+      saveNegotiation({
+        id,
+        userEmail,
+        scenarioId: scenario.id,
+        scenarioTitle: scenario.title,
+        agents,
+        turns,
+        mode,
+        summary,
+        settlement: { ...settlement },
+      }).catch((err) => console.warn('Could not save negotiation to the database:', err));
+    }
   }, [settlement]);
 
   // Auto-scroll inside chat dialogue container ONLY (does NOT scroll or lock the outer page)
@@ -327,6 +362,7 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
     setIsPlaying(false);
     setCurrentRound(1);
     setSettlement(null);
+    setPostSummary(null);
     setUserInputText('');
     setCustomPriceTerm('');
     setCustomDurationTerm('');
@@ -1045,6 +1081,9 @@ export const NegotiationArena: React.FC<NegotiationArenaProps> = ({
           )}
         </div>
       </div>
+
+      {/* Task 5: Post-interaction analysis (shown once the negotiation concludes) */}
+      {settlement && postSummary && <PostInteractionPanel summary={postSummary} />}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Play,
   FileText,
+  BarChart3,
   Bot,
   Calendar,
   LogOut,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 import { CalendarUser } from '../services/authService.ts';
 
-export type NavTab = 'home' | 'scenarios' | 'config' | 'review' | 'negotiation' | 'reports';
+export type NavTab = 'home' | 'scenarios' | 'config' | 'review' | 'negotiation' | 'reports' | 'analytics';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -68,6 +69,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'reports',
       label: 'Reports',
       icon: <FileText className="w-4 h-4" />,
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      icon: <BarChart3 className="w-4 h-4" />,
     },
   ];
 

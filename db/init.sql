@@ -23,3 +23,9 @@ CREATE TABLE IF NOT EXISTS negotiations (
 
 CREATE INDEX IF NOT EXISTS idx_negotiations_user_created
   ON negotiations (user_email, created_at DESC);
+
+-- Task 5 / Milestone 4: post-interaction analysis + performance analytics
+ALTER TABLE negotiations ADD COLUMN IF NOT EXISTS mode    TEXT;
+ALTER TABLE negotiations ADD COLUMN IF NOT EXISTS summary JSONB;
+CREATE INDEX IF NOT EXISTS idx_negotiations_scenario_mode ON negotiations (scenario_id, mode);
+

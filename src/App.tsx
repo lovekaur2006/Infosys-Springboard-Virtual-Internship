@@ -41,6 +41,8 @@ import { AgentConfigurationScreen } from './components/AgentConfigurationScreen.
 import { ReviewStartScreen } from './components/ReviewStartScreen.tsx';
 import { NegotiationArena } from './components/NegotiationArena.tsx';
 import { ReportsScreen } from './components/ReportsScreen.tsx';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard.tsx';
+import type { FinishedSession } from './services/postInteractionSummary.ts';
 import { CalendarScheduleModal } from './components/CalendarScheduleModal.tsx';
 import { CalendarConfirmModal } from './components/CalendarConfirmModal.tsx';
 import { CalendarEventListModal } from './components/CalendarEventListModal.tsx';
@@ -91,6 +93,9 @@ export default function App() {
   const [detectedJobProfile, setDetectedJobProfile] = useState<JobRoleProfile | null>(() =>
     detectJobProfile({ role: DEFAULT_JOB_ROLE, level: DEFAULT_JOB_LEVEL })
   );
+
+  // Task 5: last completed negotiation (feeds the Reports screen)
+  const [lastSession, setLastSession] = useState<FinishedSession | null>(null);
 
   // Active View Tab
   const [activeTab, setActiveTab] = useState<NavTab>('home');
@@ -520,18 +525,29 @@ export default function App() {
               onBackToConfig={() => setActiveTab('config')}
               onOpenScheduleModal={handleOpenScheduleFlow}
               isCalendarConnected={isCalendarGranted}
+              userEmail={user.email}
+              onSessionComplete={setLastSession}
             />
           )}
 
           {/* Screen 5: Reports */}
           {activeTab === 'reports' && (
             <ReportsScreen
+              session={lastSession}
               scenario={selectedScenario}
               agents={configuredAgents}
               scheduledEvent={scheduledCalendarEvent}
               onStartNegotiation={() => setActiveTab('negotiation')}
               onOpenScheduleModal={handleOpenScheduleFlow}
               isCalendarConnected={isCalendarGranted}
+            />
+          )}
+
+          {/* Screen 6: Performance Analytics (Task 5) */}
+          {activeTab === 'analytics' && (
+            <AnalyticsDashboard
+              userEmail={user.email}
+              onStartNegotiation={() => setActiveTab('negotiation')}
             />
           )}
         </div>

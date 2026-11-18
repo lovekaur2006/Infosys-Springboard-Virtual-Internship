@@ -1,3 +1,5 @@
+import type { SessionRecord } from "./analyticsEngine.ts";
+
 const API_BASE_URL = "/api";
 
 export async function syncGoogleUser(accessToken: string) {
@@ -26,6 +28,9 @@ export async function syncGoogleUser(accessToken: string) {
 }
 
 interface SaveNegotiationData {
+  id?: string;
+  mode?: 'interactive' | 'auto';
+  summary?: unknown;
   userEmail: string;
   scenarioId: string;
   scenarioTitle: string;
@@ -54,5 +59,14 @@ export async function saveNegotiation(data: SaveNegotiationData) {
     );
   }
 
+  return response.json();
+}
+
+/** Task 5: load saved sessions (with post-interaction summaries) for the analytics dashboard. */
+export async function fetchAnalyticsSessions(email: string): Promise<SessionRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/analytics/sessions?email=${encodeURIComponent(email)}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load analytics sessions (${response.status})`);
+  }
   return response.json();
 }
