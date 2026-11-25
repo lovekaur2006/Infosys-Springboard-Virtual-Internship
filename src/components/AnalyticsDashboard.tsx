@@ -1,11 +1,10 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
- *
- * Task 5 / Milestone 4 - Performance Analytics Dashboard (multi-session insights).
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import '../analyticsPrint.css';
 import {
   AlertTriangle, BarChart3, CheckCircle2, Database, Download, FileText, Lightbulb, Play, Printer, Trash2, Wand2,
 } from 'lucide-react';
@@ -29,7 +28,7 @@ const download = (filename: string, content: string, type: string) => {
 };
 
 const Card: React.FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-  <div className={`pn-report-section rounded-3xl border border-slate-200/90 bg-white p-6 shadow-xs ${className}`}>
+  <div className={`pn-an-section rounded-3xl border border-slate-200/90 bg-white p-6 shadow-xs ${className}`}>
     <div className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900">{icon}{title}</div>
     {children}
   </div>
@@ -108,21 +107,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userEmai
     let cancelled = false;
     setLoading(true);
     fetchAnalyticsSessions(userEmail)
-      .then((rows) => {
-        if (!cancelled) {
-          setRemote(rows);
-          setApiUnavailable(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setApiUnavailable(true);
-          setLocal(loadLocalSessions());
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      .then((rows) => { if (!cancelled) { setRemote(rows); setApiUnavailable(false); } })
+      .catch(() => { if (!cancelled) setApiUnavailable(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [userEmail]);
 
@@ -143,7 +130,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userEmai
   const recent = [...sessions].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0, 8);
 
   return (
-    <div className="pn-page space-y-8 animate-in fade-in duration-200">
+    <div className="pn-page pn-analytics space-y-8 animate-in fade-in duration-200">
       <div className="pn-report-heading flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-teal-700">Performance analytics / Multi-session insights</div>
@@ -191,7 +178,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userEmai
         </div>
       ) : (
         <>
-          <div className="pn-report-metrics grid grid-cols-2 gap-5 lg:grid-cols-4">
+          <div className="pn-an-metrics grid grid-cols-2 gap-5 lg:grid-cols-4">
             <Kpi label="Agreement rate" value={`${t.agreementRate}%`} hint={`${t.settled} settled / ${t.impasse} impasse`} />
             <Kpi label="Avg resolution score" value={`${t.avgResolutionScore}/100`} hint="Goals, balance, efficiency" />
             <Kpi label="Avg rounds" value={`${t.avgRounds}`} hint="Lower means more efficient" />
