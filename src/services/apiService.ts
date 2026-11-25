@@ -66,6 +66,9 @@ export async function saveNegotiation(data: SaveNegotiationData) {
 export async function fetchAnalyticsSessions(email: string): Promise<SessionRecord[]> {
   const response = await fetch(`${API_BASE_URL}/analytics/sessions?email=${encodeURIComponent(email)}`);
   if (!response.ok) {
+    if (response.status === 502 || response.status === 503) {
+      throw new Error(`Database API service is unavailable (HTTP ${response.status}). Operating in local mode.`);
+    }
     throw new Error(`Failed to load analytics sessions (${response.status})`);
   }
   return response.json();

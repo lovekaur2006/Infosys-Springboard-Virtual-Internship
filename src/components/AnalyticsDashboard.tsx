@@ -108,9 +108,21 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userEmai
     let cancelled = false;
     setLoading(true);
     fetchAnalyticsSessions(userEmail)
-      .then((rows) => { if (!cancelled) { setRemote(rows); setApiUnavailable(false); } })
-      .catch(() => { if (!cancelled) setApiUnavailable(true); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .then((rows) => {
+        if (!cancelled) {
+          setRemote(rows);
+          setApiUnavailable(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setApiUnavailable(true);
+          setLocal(loadLocalSessions());
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => { cancelled = true; };
   }, [userEmail]);
 
