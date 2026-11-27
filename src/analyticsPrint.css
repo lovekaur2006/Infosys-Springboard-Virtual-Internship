@@ -1,0 +1,19 @@
+@media print {
+  html .pn-page.pn-analytics > * { display: block !important; }
+  html .pn-page.pn-analytics > .flex { display: flex !important; }
+  html .pn-page.pn-analytics > .grid { display: grid !important; gap: 4mm !important; }
+  html .pn-page.pn-analytics { gap: 4mm !important; font-size: 8pt; }
+  html .pn-page.pn-analytics .pn-an-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  html .pn-page.pn-analytics .pn-an-metrics > div,
+  html .pn-page.pn-analytics .pn-an-section {
+    box-shadow: none !important;
+    border: 1px solid #e1e6f2 !important;
+    border-radius: 3mm !important;
+    padding: 4mm !important;
+    break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  html .pn-page.pn-analytics svg { max-width: 100%; height: auto; }
+  html .pn-page.pn-analytics table { font-size: 7pt; }
+}
