@@ -1260,9 +1260,9 @@ body {
 
 .pn-page button[class*="bg-teal-700"],
 .pn-page button[class*="bg-[#101a32]"],
-.pn-scenario-selection button[class*="bg-[#2563EB"]],
-.pn-scenario-selection button[class*="bg-[#7C3AED"]],
-.pn-scenario-selection button[class*="bg-[#059669"]] {
+.pn-scenario-selection button[class*="bg-[#2563EB]"],
+.pn-scenario-selection button[class*="bg-[#7C3AED]"],
+.pn-scenario-selection button[class*="bg-[#059669]"] {
   color: #fbfaf4 !important;
   background: var(--brand) !important;
   border-radius: 3px !important;
@@ -3626,8 +3626,8 @@ body {
 }
 
 ::selection {
-  color: #fff;
-  background: rgba(99, 102, 241, 0.40);
+  color: #ffffff;
+  background: #4f46e5;
 }
 
 :focus-visible {

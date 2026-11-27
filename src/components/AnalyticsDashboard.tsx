@@ -104,9 +104,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userEmai
   const [apiUnavailable, setApiUnavailable] = useState(false);
 
   useEffect(() => {
-    if (!userEmail) return;
+    if (!userEmail) {
+      setRemote([]);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
+    setRemote([]);
     fetchAnalyticsSessions(userEmail)
       .then((rows) => {
         if (!cancelled) {
@@ -117,6 +121,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ userEmai
       .catch(() => {
         if (!cancelled) {
           setApiUnavailable(true);
+          setRemote([]);
           setLocal(loadLocalSessions());
         }
       })
